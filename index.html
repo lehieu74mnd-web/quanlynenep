@@ -29,7 +29,7 @@
         <div class="flex items-center gap-1.5 bg-blue-950/70 px-3 py-1.5 rounded-lg border border-blue-800">
           <label class="text-xs font-bold text-amber-300">TUẦN:</label>
           <select id="select-week" onchange="changeWeek(this.value)" class="text-xs bg-blue-900 text-white font-bold px-2 py-0.5 rounded border border-blue-700 focus:outline-none focus:ring-1 focus:ring-amber-400">
-            <!-- 35 tuần tạo tự động -->
+            <!-- 35 tuần -->
           </select>
         </div>
 
@@ -44,7 +44,7 @@
     </div>
   </header>
 
-  <!-- 2 Tab chính -->
+  <!-- Navigation Tabs -->
   <nav class="bg-white border-b border-slate-200 shadow-sm no-print sticky top-[61px] z-40">
     <div class="max-w-7xl mx-auto px-4 flex space-x-2">
       <button onclick="switchTab('tab-overview')" id="btn-tab-overview" class="tab-btn px-5 py-3 font-semibold text-xs md:text-sm border-b-2 border-blue-900 text-blue-900 flex items-center gap-2 transition">
@@ -59,9 +59,8 @@
   <!-- Main Content -->
   <main class="max-w-7xl mx-auto p-4 md:p-6 space-y-6 flex-1 w-full">
 
-    <!-- TAB 1: TỔNG QUAN & BẢNG VÀNG THI ĐUA -->
+    <!-- TAB 1: TỔNG QUAN -->
     <section id="tab-overview" class="tab-pane space-y-6">
-      <!-- 4 Thẻ KPI -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 no-print">
         <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
           <div>
@@ -144,7 +143,7 @@
       </div>
     </section>
 
-    <!-- TAB 2: HỒ SƠ NỀ NẾP & TRA CỨU CHI TIẾT TỪNG LỚP -->
+    <!-- TAB 2: HỒ SƠ NỀ NẾP TỪNG LỚP -->
     <section id="tab-class-detail" class="tab-pane hidden space-y-6">
       <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-slate-100">
@@ -167,7 +166,7 @@
           <!-- Render by JS -->
         </div>
 
-        <!-- Chi tiết các sự việc vi phạm của lớp -->
+        <!-- Chi tiết vi phạm -->
         <div class="space-y-3">
           <h3 class="text-xs md:text-sm font-bold text-blue-950 flex items-center gap-2">
             <i class="fa-solid fa-list-check text-rose-500"></i> CHI TIẾT CÁC SỰ VIỆC GHI NHẬN TRONG <span id="label-current-week-sub">TUẦN 1</span>
@@ -216,12 +215,10 @@
     ];
 
     let currentWeek = 1;
-    let API_URL = "https://script.google.com/macros/s/AKfycbzcr9-HQegb0DqRl08S7iuWFO8oLjT0PezoCOnvHTxUIPscCDmmZaybXy66heIyBiNxkA/exec";
+    let API_URL = "https://script.google.com/macros/s/AKfycbyiYrmConnz2PliUSa19MyR7DRb4bjoVzW4ddwPncCKTRZOgvkAsbVl6aimpHARyyQp2g/exec";
 
     let absents = {};
     let incidents = [];
-    
-    // Bộ nhớ đệm phía trình duyệt giúp chuyển tuần tức thì trong 0 giây
     const memoryCache = {};
 
     function formatDateVN(dateVal) {
@@ -257,7 +254,6 @@
     }
 
     async function fetchFromGoogleSheets(forceRefresh = false) {
-      // Nếu đã có trong Cache trình duyệt và không ép làm mới, load ngay lập tức
       if (!forceRefresh && memoryCache[currentWeek]) {
         const cached = memoryCache[currentWeek];
         absents = cached.absents;
@@ -274,13 +270,8 @@
         if (data.status === 'success') {
           absents = data.absents || {};
           incidents = data.incidents || [];
-          
-          // Lưu vào bộ nhớ đệm
           memoryCache[currentWeek] = { absents, incidents };
-          
           refreshAllViews();
-        } else {
-          alert("Lỗi tải dữ liệu: " + (data.message || "Không xác định"));
         }
       } catch (err) {
         console.error("Lỗi kết nối API:", err);
@@ -288,6 +279,31 @@
       } finally {
         spin.classList.remove('fa-spin');
       }
+    }
+
+    // TÍNH TOÁN CỘNG DỒN VẮNG TỰ ĐỘNG TỪ 2 NGUỒN (ADMIN & NHẬT KÝ VI PHẠM)
+    function getClassAbsentData(className) {
+      const ab = absents[className] || { p: 0, kp: 0, totalMinus: 0 };
+      let p = ab.p || 0;
+      let kp = ab.kp || 0;
+
+      // Quét danh sách vi phạm của lớp để tìm các vụ vắng được ghi bởi cờ đỏ / sổ đầu bài
+      const classIncidents = incidents.filter(i => i.lop === className && Number(i.week) === currentWeek);
+      classIncidents.forEach(inc => {
+        const cat = (inc.category || '').toLowerCase();
+        const note = (inc.note || '').toLowerCase();
+        
+        if (cat.includes('vắng') || note.includes('vắng')) {
+          if (cat.includes('không phép') || note.includes('không phép')) {
+            kp += 1;
+          } else {
+            p += 1;
+          }
+        }
+      });
+
+      const totalMinus = (p * 1) + (kp * 10);
+      return { p, kp, totalMinus };
     }
 
     function calculateClassScores() {
@@ -302,13 +318,12 @@
           else sdbMinus += Math.abs(inc.points);
         });
 
-        const ab = absents[cls.name] || { p: 0, kp: 0, totalMinus: 0 };
-        const vangMinus = ab.totalMinus !== undefined ? ab.totalMinus : ((ab.p || 0) * 1 + (ab.kp || 0) * 10);
-        const totalMinus = sdbMinus + coDoMinus + vangMinus;
+        const abData = getClassAbsentData(cls.name);
+        const totalMinus = sdbMinus + coDoMinus + abData.totalMinus;
         const totalScore = BASE_POINTS - totalMinus + rewardPlus;
         const avgScore = Number((totalScore / BASE_POINTS * 10).toFixed(2));
 
-        return { ...cls, sdbMinus, coDoMinus, vangMinus, rewardPlus, totalScore, avgScore };
+        return { ...cls, sdbMinus, coDoMinus, vangMinus: abData.totalMinus, rewardPlus, totalScore, avgScore };
       });
     }
 
@@ -337,7 +352,10 @@
       }
 
       let totalIncidentsCount = incidents.filter(i => Number(i.week) === currentWeek).length;
-      let totalAbsentCount = Object.values(absents).reduce((sum, item) => sum + (item.p || 0) + (item.kp || 0), 0);
+      let totalAbsentCount = CLASSES.reduce((sum, cls) => {
+        const abData = getClassAbsentData(cls.name);
+        return sum + abData.p + abData.kp;
+      }, 0);
       let schoolAvgScore = scores.length > 0 ? (scores.reduce((sum, c) => sum + c.avgScore, 0) / scores.length).toFixed(2) : "10";
 
       document.getElementById('stat-total-incidents').innerText = totalIncidentsCount + " LƯỢT";
@@ -369,7 +387,7 @@
     function renderClassDetailView(className) {
       const scores = calculateClassScores();
       const clsData = scores.find(c => c.name === className) || scores[0];
-      const ab = absents[className] || { p: 0, kp: 0 };
+      const abData = getClassAbsentData(className);
 
       document.getElementById('class-summary-cards').innerHTML = `
         <div class="p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl">
@@ -384,8 +402,8 @@
         </div>
         <div class="p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl">
           <p class="text-[10px] uppercase font-bold text-amber-800">Chuyên Cần Tuần Này</p>
-          <p class="text-xl font-black text-amber-700 mt-0.5">${(ab.p || 0) + (ab.kp || 0)} buổi vắng</p>
-          <p class="text-[11px] text-amber-600 font-medium">${ab.p || 0} có phép • ${ab.kp || 0} không phép</p>
+          <p class="text-xl font-black text-amber-700 mt-0.5">${abData.p + abData.kp} buổi vắng</p>
+          <p class="text-[11px] text-amber-600 font-medium">${abData.p} có phép • ${abData.kp} không phép</p>
         </div>
         <div class="p-3.5 bg-rose-50/70 border border-rose-200 rounded-xl">
           <p class="text-[10px] uppercase font-bold text-rose-800">Tổng Điểm Bị Trừ</p>
