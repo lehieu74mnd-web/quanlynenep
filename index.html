@@ -283,17 +283,22 @@
 
     // TÍNH TOÁN CỘNG DỒN VẮNG TỰ ĐỘNG TỪ 2 NGUỒN (ADMIN & NHẬT KÝ VI PHẠM)
     function getClassAbsentData(className) {
-      const ab = absents[className] || { p: 0, kp: 0, totalMinus: 0 };
-      let p = ab.p || 0;
-      let kp = ab.kp || 0;
+      // 1. Kiểm tra dữ liệu vắng từ sheet CHUYEN_CAN_35W (qua biến absents)
+      const ab = absents[className];
+      if (ab && (ab.p > 0 || ab.kp > 0 || ab.totalMinus > 0)) {
+        const p = ab.p || Math.floor((ab.totalMinus || 0) % 10);
+        const kp = ab.kp || Math.floor((ab.totalMinus || 0) / 10);
+        const totalMinus = (p * 1) + (kp * 10);
+        return { p, kp, totalMinus };
+      }
 
-      // Quét danh sách vi phạm của lớp trong tuần hiện tại
+      // 2. Nếu sheet chuyên cần chưa nhập, tự động quét từ danh sách Nhật ký vi phạm
+      let p = 0, kp = 0;
       const classIncidents = incidents.filter(i => i.lop === className && Number(i.week) === currentWeek);
       classIncidents.forEach(inc => {
         const cat = (inc.category || '').toLowerCase();
         const note = (inc.note || '').toLowerCase();
         
-        // Kiểm tra rộng hơn các biến thể chữ hoa/thường của từ "vắng"
         if (cat.includes('vắng') || cat.includes('vang') || note.includes('vắng') || note.includes('vang')) {
           if (cat.includes('không phép') || cat.includes('khong phep') || note.includes('không phép')) {
             kp += 1;
