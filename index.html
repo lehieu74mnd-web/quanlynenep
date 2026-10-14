@@ -253,7 +253,7 @@
       fetchFromGoogleSheets();
     }
 
-   async function fetchFromGoogleSheets(forceRefresh = false) {
+    async function fetchFromGoogleSheets(forceRefresh = false) {
       if (!forceRefresh && memoryCache[currentWeek]) {
         const cached = memoryCache[currentWeek];
         absents = cached.absents;
@@ -270,14 +270,12 @@
         if (data.status === 'success') {
           absents = data.absents || {};
           
-          // KHẮC PHỤC TẬN GỐC: Loại bỏ hoàn toàn các dòng sự việc bị lặp từ nguồn API trả về
+          // Loại bỏ triệt để các bản ghi bị lặp từ nguồn API
           const rawIncidents = data.incidents || [];
           const seen = new Set();
           incidents = rawIncidents.filter(i => {
             const uniqueKey = `${i.date}_${i.lop}_${i.category}_${i.note}_${i.points}`;
-            if (seen.has(uniqueKey)) {
-              return false; // Nếu đã có rồi thì bỏ qua (không cho vào mảng)
-            }
+            if (seen.has(uniqueKey)) return false;
             seen.add(uniqueKey);
             return true;
           });
@@ -292,7 +290,8 @@
         spin.classList.remove('fa-spin');
       }
     }
-    // TÍNH TOÁN CỘNG DỒN VẮNG TỰ ĐỘNG TỪ 2 NGUỒN (ADMIN & NHẬT KÝ VI PHẠM)
+
+    // ĐẾM SỐ BUỔI VẮNG CHÍNH XÁC TUYỆT ĐỐI TỪ NHẬT KÝ VI PHẠM (KHÔNG CỘNG DỒN KÉP)
     function getClassAbsentData(className) {
       let p = 0;
       let kp = 0;
@@ -316,23 +315,6 @@
       return { p, kp, totalMinus };
     }
 
-      // 3. Đếm số buổi vắng chính xác từ danh sách duy nhất
-      uniqueIncidents.forEach(inc => {
-        const cat = (inc.category || '').toLowerCase();
-        const note = (inc.note || '').toLowerCase();
-        
-        if (cat.includes('vắng') || cat.includes('vang') || note.includes('vắng') || note.includes('vang')) {
-          if (cat.includes('không phép') || cat.includes('khong phep') || note.includes('không phép')) {
-            kp += 1;
-          } else {
-            p += 1;
-          }
-        }
-      });
-
-      const totalMinus = (p * 1) + (kp * 10);
-      return { p, kp, totalMinus };
-    }
     function calculateClassScores() {
       const BASE_POINTS = 320;
       return CLASSES.map(cls => {
