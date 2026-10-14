@@ -253,7 +253,7 @@
       fetchFromGoogleSheets();
     }
 
-    async function fetchFromGoogleSheets(forceRefresh = false) {
+   async function fetchFromGoogleSheets(forceRefresh = false) {
       if (!forceRefresh && memoryCache[currentWeek]) {
         const cached = memoryCache[currentWeek];
         absents = cached.absents;
@@ -269,7 +269,19 @@
         const data = await res.json();
         if (data.status === 'success') {
           absents = data.absents || {};
-          incidents = data.incidents || [];
+          
+          // KHẮC PHỤC TẬN GỐC: Loại bỏ hoàn toàn các dòng sự việc bị lặp từ nguồn API trả về
+          const rawIncidents = data.incidents || [];
+          const seen = new Set();
+          incidents = rawIncidents.filter(i => {
+            const uniqueKey = `${i.date}_${i.lop}_${i.category}_${i.note}_${i.points}`;
+            if (seen.has(uniqueKey)) {
+              return false; // Nếu đã có rồi thì bỏ qua (không cho vào mảng)
+            }
+            seen.add(uniqueKey);
+            return true;
+          });
+
           memoryCache[currentWeek] = { absents, incidents };
           refreshAllViews();
         }
@@ -280,25 +292,29 @@
         spin.classList.remove('fa-spin');
       }
     }
-
     // TÍNH TOÁN CỘNG DỒN VẮNG TỰ ĐỘNG TỪ 2 NGUỒN (ADMIN & NHẬT KÝ VI PHẠM)
     function getClassAbsentData(className) {
       let p = 0;
       let kp = 0;
 
-      // 1. Lọc các sự việc của lớp trong tuần hiện tại
       const classIncidents = incidents.filter(i => i.lop === className && Number(i.week) === currentWeek);
       
-      // 2. Loại bỏ các bản ghi bị trùng lặp trong mảng incidents (nếu có)
-      const uniqueIncidents = [];
-      const seen = new Set();
       classIncidents.forEach(inc => {
-        const uniqueKey = `${inc.date}_${inc.lop}_${inc.category}_${inc.note}`;
-        if (!seen.has(uniqueKey)) {
-          seen.add(uniqueKey);
-          uniqueIncidents.push(inc);
+        const cat = (inc.category || '').toLowerCase();
+        const note = (inc.note || '').toLowerCase();
+        
+        if (cat.includes('vắng') || cat.includes('vang') || note.includes('vắng') || note.includes('vang')) {
+          if (cat.includes('không phép') || cat.includes('khong phep') || note.includes('không phép')) {
+            kp += 1;
+          } else {
+            p += 1;
+          }
         }
       });
+
+      const totalMinus = (p * 1) + (kp * 10);
+      return { p, kp, totalMinus };
+    }
 
       // 3. Đếm số buổi vắng chính xác từ danh sách duy nhất
       uniqueIncidents.forEach(inc => {
