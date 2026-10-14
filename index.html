@@ -191,8 +191,6 @@
             </table>
           </div>
         </div>
-
-  
       </div>
     </section>
   </main>
@@ -218,13 +216,12 @@
     ];
 
     let currentWeek = 1;
-    // URL Web App của bạn
     let API_URL = "https://script.google.com/macros/s/AKfycbyiYrmConnz2PliUSa19MyR7DRb4bjoVzW4ddwPncCKTRZOgvkAsbVl6aimpHARyyQp2g/exec";
 
     let absents = {};
     let incidents = [];
     
-    // Bộ nhớ đệm phía trình duyệt giúp chuyển tuần tức thi trong 0 giây
+    // Bộ nhớ đệm phía trình duyệt giúp chuyển tuần tức thì trong 0 giây
     const memoryCache = {};
 
     function formatDateVN(dateVal) {
@@ -272,7 +269,7 @@
       const spin = document.getElementById('sync-spin');
       spin.classList.add('fa-spin');
       try {
-        const res = await fetch(`${API_URL}?week=${currentWeek}&_t=${Date.now()}`);
+        const res = await fetch(`${API_URL}?week=${currentWeek}`);
         const data = await res.json();
         if (data.status === 'success') {
           absents = data.absents || {};
@@ -414,8 +411,6 @@
           </tr>
         `).join('');
       }
-
-     
     }
 
     function lookupClassDirectly(className) {
