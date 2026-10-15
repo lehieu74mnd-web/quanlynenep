@@ -435,11 +435,29 @@
       `).join('');
     }
 
-    function deleteIncident(id) {
-      if (confirm("Bạn có chắc chắn muốn xóa bản ghi này?")) {
+    async function deleteIncident(id) {
+      if (confirm("Bạn có chắc chắn muốn xóa bản ghi này trên hệ thống Google Sheets?")) {
+        // Xóa tạm thời trên giao diện
         incidents = incidents.filter(i => i.id !== id);
         renderIncidentLog();
-        alert("Đã xóa bản ghi thành công!");
+
+        // Gửi yêu cầu xóa lên Google Apps Script để cập nhật Google Sheets
+        if (API_URL) {
+          try {
+            await fetch(API_URL, {
+              method: 'POST',
+              body: JSON.stringify({ 
+                action: 'deleteIncident', 
+                id: id, 
+                week: currentWeek 
+              })
+            });
+            alert("Đã xóa và đồng bộ thành công trên Google Sheets!");
+            fetchFromGoogleSheets();
+          } catch (err) {
+            alert("Lỗi kết nối khi xóa dữ liệu trên Google Sheets!");
+          }
+        }
       }
     }
 
