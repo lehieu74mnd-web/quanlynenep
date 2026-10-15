@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cổng Quản Trị & Nhập Liệu Nề Nếp - THPT Thu Xà</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="style_edtech.css">
+</head>
+<body class="min-h-screen flex flex-col antialiased bg-slate-50">
+  <!-- Header Admin -->
+  <header class="bg-blue-900 text-white shadow-md sticky top-0 z-50 no-print">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
+      <div class="flex items-center gap-3">
+        <div class="bg-blue-800 p-2 rounded-xl shadow-inner border border-blue-700">
+          <i class="fa-solid fa-user-shield text-2xl text-amber-400"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base md:text-lg font-bold uppercase tracking-wide">Trường THPT Thu Xà</h1>
+            <span class="text-[11px] bg-amber-500 text-blue-950 font-extrabold px-2 py-0.5 rounded shadow-sm">CÁN BỘ QUẢN TRỊ</span>
+          </div>
+          <p class="text-xs text-blue-200">Phân hệ nhập liệu chuyên cần, ghi nhận sự vụ và đồng bộ Google Sheets</p>
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-2">
+        <!-- Bộ chọn tuần làm việc -->
+        <div class="flex items-center gap-1.5 bg-blue-950 px-3 py-1.5 rounded-lg border border-blue-800">
+          <label class="text-xs font-bold text-amber-300">TUẦN LÀM VIỆC:</label>
+          <select id="select-week" onchange="changeWeek(this.value)" class="text-xs bg-blue-900 text-white font-bold px-2 py-0.5 rounded border border-blue-700 focus:outline-none focus:ring-1 focus:ring-amber-400">
+            <!-- 35 Tuần -->
+          </select>
+        </div>
+
+        <button onclick="openConfigModal()" class="text-xs bg-blue-800 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition border border-blue-600 flex items-center gap-1.5 font-medium">
+          <i class="fa-solid fa-gears text-amber-300"></i> Cài Đặt API
+        </button>
+
+        <button onclick="fetchFromGoogleSheets()" class="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 font-medium shadow-sm">
+          <i class="fa-solid fa-arrows-rotate" id="sync-spin"></i> Đồng Bộ
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs Admin -->
+  <nav class="bg-white border-b border-slate-200 shadow-sm no-print sticky top-[61px] z-40">
+    <div class="max-w-7xl mx-auto px-4 flex space-x-2">
+      <button onclick="switchTab('tab-absent-manage')" id="btn-tab-absent-manage" class="tab-btn px-5 py-3 font-semibold text-xs md:text-sm border-b-2 border-blue-900 text-blue-900 flex items-center gap-2 transition">
+        <i class="fa-solid fa-clipboard-user text-blue-600 text-base"></i> 1. Cập Nhật Chuyên Cần (Sĩ Số)
+      </button>
+      <button onclick="switchTab('tab-add-incident')" id="btn-tab-add-incident" class="tab-btn px-5 py-3 font-medium text-xs md:text-sm text-slate-500 hover:text-blue-900 border-b-2 border-transparent flex items-center gap-2 transition">
+        <i class="fa-solid fa-pen-nib text-rose-500 text-base"></i> 2. Ghi Nhận Lỗi Vi Phạm & Khen Thưởng
+      </button>
+      <button onclick="switchTab('tab-manage-log')" id="btn-tab-manage-log" class="tab-btn px-5 py-3 font-medium text-xs md:text-sm text-slate-500 hover:text-blue-900 border-b-2 border-transparent flex items-center gap-2 transition">
+        <i class="fa-solid fa-book-bookmark text-emerald-600 text-base"></i> 3. Quản Trị Sổ Nhật Ký (Sửa/Xóa)
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto p-4 md:p-6 space-y-6 flex-1 w-full">
+
+    <!-- TAB 1: CẬP NHẬT CHUYÊN CẦN -->
+    <section id="tab-absent-manage" class="tab-pane space-y-4">
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-slate-100">
+          <div>
+            <h2 class="text-base md:text-lg font-bold text-blue-950 flex items-center gap-2">
+              <i class="fa-solid fa-table-list text-blue-600"></i> CẬP NHẬT CHUYÊN CẦN 30 LỚP (TUẦN HIỆN TẠI)
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">Mỗi lần chỉnh sửa ô số vắng, hệ thống sẽ tự tính điểm trừ và gửi trực tiếp vào cột tuần tương ứng trên sheet CHUYEN_CAN_35W</p>
+          </div>
+          <div class="text-xs bg-emerald-50 text-emerald-700 font-semibold px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1.5">
+            <i class="fa-solid fa-cloud-arrow-up text-emerald-600"></i> Auto-Sync Cloud Active
+          </div>
+        </div>
+
+        <div class="overflow-x-auto mt-4">
+          <table class="w-full text-left text-xs md:text-sm border-collapse">
+            <thead>
+              <tr class="bg-slate-50 text-center">
+                <th class="py-3 px-3 text-left w-28">Chi Đoàn / Lớp</th>
+                <th class="py-3 px-2 w-16">Khối</th>
+                <th class="py-3 px-2 w-20">Sĩ Số</th>
+                <th class="py-3 px-4 bg-blue-900 text-amber-300 w-44">Vắng Có Phép (P)<br><span class="text-[10px] lowercase font-normal">(-1đ / buổi)</span></th>
+                <th class="py-3 px-4 bg-blue-900 text-rose-300 w-44">Vắng Không Phép (KP)<br><span class="text-[10px] lowercase font-normal">(-10đ / buổi)</span></th>
+                <th class="py-3 px-4 bg-blue-950 text-white font-bold w-36">Điểm Trừ Vắng</th>
+                <th class="py-3 px-3 text-center w-28 no-print">Trạng Thái</th>
+              </tr>
+            </thead>
+            <tbody id="admin-absent-tbody" class="divide-y divide-slate-100">
+              <!-- Render by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: GHI NHẬN VI PHẠM & KHEN THƯỞNG -->
+    <section id="tab-add-incident" class="tab-pane hidden space-y-4 no-print">
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-base md:text-lg font-bold text-blue-950 mb-1 flex items-center gap-2">
+          <i class="fa-solid fa-file-circle-plus text-blue-700"></i> Phiếu Ghi Nhận Vi Phạm & Khen Thưởng Nề Nếp
+        </h2>
+        <p class="text-xs text-slate-500 mb-5">Dữ liệu sau khi bấm Lưu sẽ tự động chèn 1 dòng mới vào sheet NHAT_KY_VI_PHAM</p>
+
+        <form id="incident-form" onsubmit="handleSaveIncident(event)" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Lớp Vi Phạm / Khen Thưởng *</label>
+            <select id="entry-lop" required class="w-full text-xs md:text-sm border border-slate-300 rounded-xl p-2.5 bg-slate-50 focus:ring-2 focus:ring-blue-600 focus:outline-none"></select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Ngày Xảy Ra Vi Phạm *</label>
+            <input type="date" id="entry-date" required class="w-full text-xs md:text-sm border border-slate-300 rounded-xl p-2.5 bg-slate-50 focus:ring-2 focus:ring-blue-600 font-medium">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Thời Gian (Thứ - Buổi) *</label>
+            <div class="grid grid-cols-2 gap-2">
+              <select id="entry-day" class="text-xs md:text-sm border border-slate-300 rounded-xl p-2.5 bg-slate-50">
+                <option value="Thứ 2">Thứ 2</option><option value="Thứ 3">Thứ 3</option><option value="Thứ 4">Thứ 4</option>
+                <option value="Thứ 5">Thứ 5</option><option value="Thứ 6">Thứ 6</option><option value="Thứ 7">Thứ 7</option>
+              </select>
+              <select id="entry-session" class="text-xs md:text-sm border border-slate-300 rounded-xl p-2.5 bg-slate-50">
+                <option value="Sáng">Sáng</option><option value="Chiều">Chiều</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Nguồn Ghi Nhận</label>
+            <select id="entry-source" class="w-full text-xs md:text-sm border border-slate-300 rounded-xl p-2.5 bg-slate-50">
+              <option value="TRỰC CỜ ĐỎ">Đội Cờ Đỏ (Chấm chéo cổng trường)</option>
+              <option value="SỔ ĐẦU BÀI">Sổ Đầu Bài (Giáo viên bộ môn)</option>
+              <option value="GIÁM THỊ">Ban Giám Thị / Đoàn Trường</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Loại Vi Phạm / Quy Định *</label>
+            <select id="entry-category" onchange="updateDefaultPoints()" required class="w-full text-xs md:text-sm border border-slate-300 rounded-xl p-2.5 bg-slate-50"></select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Điểm Biến Động</label>
+            <input type="number" id="entry-points" required class="w-full text-xs md:text-sm border border-slate-300 rounded-xl p-2.5 bg-slate-50 font-bold text-blue-900" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Học Sinh Vi Phạm (nếu có)</label>
+            <input type="text" id="entry-student" placeholder="Ví dụ: Huỳnh Quỳnh Như, Quốc Vũ..." class="w-full text-xs md:text-sm border border-slate-300 rounded-xl p-2.5 bg-slate-50" />
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Chi Tiết Sự Việc / Môn Học</label>
+            <input type="text" id="entry-note" placeholder="Ví dụ: Tiết 2 môn Tin học, không làm bài tập..." class="w-full text-xs md:text-sm border border-slate-300 rounded-xl p-2.5 bg-slate-50" />
+          </div>
+
+          <div class="md:col-span-3 flex justify-between items-center pt-3 border-t">
+            <span class="text-xs text-slate-500 italic">✓ Ghi nhận công tâm, chính xác, giáo dục học sinh hướng tới rèn luyện tích cực.</span>
+            <div class="flex gap-2">
+              <button type="reset" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 bg-slate-200 hover:bg-slate-300">Nhập lại</button>
+              <button type="submit" id="btn-save-incident" class="px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-900 hover:bg-blue-800 shadow-md flex items-center gap-2">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Lưu Lên Google Sheets
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- TAB 3: QUẢN TRỊ SỔ NHẬT KÝ -->
+    <section id="tab-manage-log" class="tab-pane hidden space-y-4 no-print">
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-slate-100">
+          <div>
+            <h2 class="text-base md:text-lg font-bold text-blue-950">QUẢN LÝ SỔ NHẬT KÝ SỰ VIỆC</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Xóa hoặc điều chỉnh các sự việc ghi nhận nhầm lẫn; đồng bộ trực tiếp Google Sheets</p>
+          </div>
+          <div class="relative w-full sm:w-72">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+            <input type="text" id="search-log" oninput="renderIncidentLog()" placeholder="Tìm ngày, học sinh, lớp..." class="w-full text-xs pl-8 pr-3 py-2 border border-slate-300 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-600" />
+          </div>
+        </div>
+
+        <div class="overflow-x-auto mt-4">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-50 text-slate-700">
+                <th class="py-2.5 px-3">Ngày Vi Phạm</th>
+                <th class="py-2.5 px-3">Tuần</th>
+                <th class="py-2.5 px-3">Thứ - Buổi</th>
+                <th class="py-2.5 px-3">Lớp</th>
+                <th class="py-2.5 px-3">Học Sinh</th>
+                <th class="py-2.5 px-3">Nội Dung Sự Việc</th>
+                <th class="py-2.5 px-3">Nguồn</th>
+                <th class="py-2.5 px-3 text-center">Điểm</th>
+                <th class="py-2.5 px-3">Ghi Chú</th>
+                <th class="py-2.5 px-2 text-center w-16">Xóa</th>
+              </tr>
+            </thead>
+            <tbody id="admin-log-tbody" class="divide-y divide-slate-100">
+              <!-- Render by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal cấu hình Google Apps Script -->
+  <div id="config-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden no-print">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl mx-4 space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-blue-950 text-base flex items-center gap-2">
+          <i class="fa-solid fa-gears text-blue-700"></i> Cấu hình kết nối Google Sheets (35 Tuần)
+        </h3>
+        <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
+      </div>
+      <div class="space-y-3 text-xs text-slate-600">
+        <p>Nhập <strong>Web App URL</strong> lấy từ mục <em>Triển khai (Deploy)</em> trong Google Apps Script:</p>
+        <input type="text" id="input-api-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full text-xs p-2.5 border rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-600 font-mono">
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button onclick="closeConfigModal()" class="px-3 py-1.5 rounded-lg text-xs text-slate-600 bg-slate-100">Đóng</button>
+        <button onclick="saveApiConfig()" class="px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-blue-900 hover:bg-blue-800">Lưu và Kết Nối</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CLASSES = [
+      { name: '10A1', khoi: '10', ss: 44 }, { name: '10A2', khoi: '10', ss: 43 },
+      { name: '10A3', khoi: '10', ss: 44 }, { name: '10A4', khoi: '10', ss: 43 },
+      { name: '10A5', khoi: '10', ss: 44 }, { name: '10A6', khoi: '10', ss: 43 },
+      { name: '10A7', khoi: '10', ss: 44 }, { name: '10A8', khoi: '10', ss: 43 },
+      { name: '10A9', khoi: '10', ss: 44 }, { name: '10A10', khoi: '10', ss: 44 },
+      { name: '10A11', khoi: '10', ss: 43 },
+      { name: '11B1', khoi: '11', ss: 42 }, { name: '11B2', khoi: '11', ss: 43 },
+      { name: '11B3', khoi: '11', ss: 44 }, { name: '11B4', khoi: '11', ss: 42 },
+      { name: '11B5', khoi: '11', ss: 43 }, { name: '11B6', khoi: '11', ss: 42 },
+      { name: '11B7', khoi: '11', ss: 43 },
+      { name: '12C1', khoi: '12', ss: 42 }, { name: '12C2', khoi: '12', ss: 42 },
+      { name: '12C3', khoi: '12', ss: 44 }, { name: '12C4', khoi: '12', ss: 43 },
+      { name: '12C5', khoi: '12', ss: 44 }, { name: '12C6', khoi: '12', ss: 44 },
+      { name: '12C7', khoi: '12', ss: 40 }, { name: '12C8', khoi: '12', ss: 38 },
+      { name: '12C9', khoi: '12', ss: 42 }, { name: '12C10', khoi: '12', ss: 41 },
+      { name: '12C11', khoi: '12', ss: 42 }, { name: '12C12', khoi: '12', ss: 41 }
+    ];
+
+    let RULE_CATEGORIES = JSON.parse(localStorage.getItem('thpt_custom_rules')) || [
+      { id: 'CC_01', name: 'Vắng có phép (1 HS)', defaultPts: -1, src: 'CHUYÊN CẦN' },
+      { id: 'CC_02', name: 'Vắng không phép (1 học sinh)', defaultPts: -10, src: 'CHUYÊN CẦN' },
+      { id: 'CC_03', name: 'Đi trễ, vào tiết trễ (1 học sinh)', defaultPts: -5, src: 'TRỰC CỜ ĐỎ' },
+      { id: 'KL_03', name: 'Trong giờ học: Không nghiêm túc, đùa giỡn, ngủ trong lớp...', defaultPts: -10, src: 'SỔ ĐẦU BÀI' }
+    ];
+
+    let currentWeek = 1;
+    let API_URL = localStorage.getItem('gsheet_api_url') || "https://script.google.com/macros/s/AKfycbyiYrmConnz2PliUSa19MyR7DRb4bjoVzW4ddwPncCKTRZOgvkAsbVl6aimpHARyyQp2g/exec";
+    let absents = {};
+    let incidents = [];
+
+    function initWeekDropdown() {
+      const sel = document.getElementById('select-week');
+      let html = '';
+      for (let w = 1; w <= 35; w++) {
+        html += `<option value="${w}">Tuần ${w} (${w <= 18 ? 'HK1' : 'HK2'})</option>`;
+      }
+      sel.innerHTML = html;
+      sel.value = currentWeek;
+
+      document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
+      document.getElementById('entry-lop').innerHTML = CLASSES.map(c => `<option value="${c.name}">${c.name} (Khối ${c.khoi})</option>`).join('');
+      initCategoryDropdown();
+    }
+
+    function initCategoryDropdown() {
+      const catEl = document.getElementById('entry-category');
+      if (!catEl) return;
+      catEl.innerHTML = RULE_CATEGORIES.map(r => {
+        const ptsSign = r.defaultPts > 0 ? '+' : '';
+        return `<option value="${r.name}" data-pts="${r.defaultPts}" data-src="${r.src || ''}">[${ptsSign}${r.defaultPts}đ] ${r.name}</option>`;
+      }).join('');
+      updateDefaultPoints();
+    }
+
+    function updateDefaultPoints() {
+      const sel = document.getElementById('entry-category');
+      if (!sel || sel.selectedIndex < 0) return;
+      const opt = sel.options[sel.selectedIndex];
+      document.getElementById('entry-points').value = opt.getAttribute('data-pts');
+    }
+
+    function changeWeek(val) {
+      currentWeek = Number(val);
+      fetchFromGoogleSheets();
+    }
+
+    async function fetchFromGoogleSheets() {
+      if (!API_URL) return;
+      const spin = document.getElementById('sync-spin');
+      spin.classList.add('fa-spin');
+      try {
+        const res = await fetch(`${API_URL}?week=${currentWeek}`);
+        const data = await res.json();
+        if (data.status === 'success') {
+          absents = data.absents || {};
+          incidents = data.incidents || [];
+          if (data.rules && data.rules.length > 0) {
+            RULE_CATEGORIES = data.rules;
+            initCategoryDropdown();
+          }
+          refreshAllViews();
+        }
+      } catch (err) {
+        console.error("Lỗi kết nối:", err);
+      } finally {
+        spin.classList.remove('fa-spin');
+      }
+    }
+
+    function renderAbsentTable() {
+      const tbody = document.getElementById('admin-absent-tbody');
+      tbody.innerHTML = CLASSES.map(cls => {
+        const ab = absents[cls.name] || { p: 0, kp: 0 };
+        const scoreMinus = (ab.p * 1) + (ab.kp * 10);
+        const rowKey = `status-${cls.name}`;
+        return `
+          <tr class="hover:bg-blue-50/40 transition border-b border-slate-100 text-center">
+            <td class="py-2.5 px-3 text-left font-bold text-blue-950">${cls.name}</td>
+            <td class="py-2.5 px-2 text-slate-500 font-semibold">${cls.khoi}</td>
+            <td class="py-2.5 px-2 text-slate-500 font-medium">${cls.ss}</td>
+            <td class="py-2.5 px-4 bg-amber-50/20">
+              <input type="number" min="0" value="${ab.p}" onchange="handleAbsentChange('${cls.name}', 'p', this.value, '${rowKey}')" class="w-20 text-center font-bold border rounded-lg p-1">
+            </td>
+            <td class="py-2.5 px-4 bg-rose-50/20">
+              <input type="number" min="0" value="${ab.kp}" onchange="handleAbsentChange('${cls.name}', 'kp', this.value, '${rowKey}')" class="w-20 text-center font-bold border rounded-lg p-1">
+            </td>
+            <td class="py-2.5 px-4 font-bold text-rose-700 bg-slate-50">${scoreMinus > 0 ? '-' + scoreMinus + ' đ' : '0 đ'}</td>
+            <td class="py-2.5 px-3 no-print" id="${rowKey}"><span class="text-[11px] text-emerald-600 font-bold">✓ Đã lưu</span></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function handleAbsentChange(className, field, value, statusElId) {
+      const val = parseInt(value, 10) || 0;
+      if (!absents[className]) absents[className] = { p: 0, kp: 0 };
+      absents[className][field] = val;
+      renderAbsentTable();
+
+      const statusEl = document.getElementById(statusElId);
+      if (statusEl) statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-blue-600"></i>`;
+
+      if (API_URL) {
+        try {
+          await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'updateAttendance',
+              week: currentWeek,
+              attendance: absents
+            })
+          });
+          if (statusEl) statusEl.innerHTML = `<span class="text-[11px] text-emerald-600 font-bold">✓ Đã lưu</span>`;
+        } catch (err) {
+          if (statusEl) statusEl.innerHTML = `<span class="text-[11px] text-rose-600 font-bold">Lỗi lưu</span>`;
+        }
+      }
+    }
+
+    async function handleSaveIncident(e) {
+      e.preventDefault();
+      const inc = {
+        id: Date.now(),
+        week: currentWeek,
+        date: document.getElementById('entry-date').value,
+        day: document.getElementById('entry-day').value,
+        session: document.getElementById('entry-session').value,
+        lop: document.getElementById('entry-lop').value,
+        student: document.getElementById('entry-student').value,
+        source: document.getElementById('entry-source').value,
+        category: document.getElementById('entry-category').value,
+        points: Number(document.getElementById('entry-points').value) || 0,
+        note: document.getElementById('entry-note').value
+      };
+
+      incidents.push(inc);
+      renderIncidentLog();
+      document.getElementById('incident-form').reset();
+      document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
+
+      if (API_URL) {
+        try {
+          await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'addIncident', week: currentWeek, incident: inc })
+          });
+          alert("Đã lưu sự việc lên Google Sheets thành công!");
+          fetchFromGoogleSheets();
+        } catch (err) {
+          alert("Lỗi kết nối đồng bộ Google Sheets!");
+        }
+      }
+    }
+
+    function renderIncidentLog() {
+      const tbody = document.getElementById('admin-log-tbody');
+      const keyword = document.getElementById('search-log').value.toLowerCase();
+      const filtered = incidents.filter(i => 
+        (i.lop && i.lop.toLowerCase().includes(keyword)) ||
+        (i.student && i.student.toLowerCase().includes(keyword)) ||
+        (i.category && i.category.toLowerCase().includes(keyword))
+      );
+
+      tbody.innerHTML = filtered.map(i => `
+        <tr class="hover:bg-slate-50 border-b">
+          <td class="py-2.5 px-3 font-semibold text-blue-900">${i.date}</td>
+          <td class="py-2.5 px-3 font-bold">Tuần ${i.week}</td>
+          <td class="py-2.5 px-3 text-slate-600">${i.day} - ${i.session}</td>
+          <td class="py-2.5 px-3 font-bold text-blue-950">${i.lop}</td>
+          <td class="py-2.5 px-3 text-slate-700">${i.student || 'Tập thể'}</td>
+          <td class="py-2.5 px-3 text-slate-700">${i.category}</td>
+          <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 font-semibold">${i.source}</span></td>
+          <td class="py-2.5 px-3 text-center font-bold ${i.points > 0 ? 'text-emerald-600' : 'text-rose-600'}">${i.points > 0 ? '+' + i.points : i.points} đ</td>
+          <td class="py-2.5 px-3 text-slate-500">${i.note || ''}</td>
+          <td class="py-2.5 px-2 text-center">
+            <button onclick="deleteIncident(${i.id})" class="text-rose-500 hover:text-rose-700 p-1"><i class="fa-solid fa-trash-can"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function deleteIncident(id) {
+      if (confirm("Bạn có chắc chắn muốn xóa bản ghi này?")) {
+        incidents = incidents.filter(i => i.id !== id);
+        renderIncidentLog();
+        alert("Đã xóa bản ghi thành công!");
+      }
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('border-blue-900', 'text-blue-900', 'font-semibold');
+        btn.classList.add('border-transparent', 'text-slate-500', 'font-medium');
+      });
+      document.getElementById(tabId).classList.remove('hidden');
+      document.getElementById('btn-' + tabId)?.classList.add('border-blue-900', 'text-blue-900', 'font-semibold');
+    }
+
+    function refreshAllViews() {
+      renderAbsentTable();
+      renderIncidentLog();
+    }
+
+    function openConfigModal() { document.getElementById('config-modal').classList.remove('hidden'); document.getElementById('input-api-url').value = API_URL; }
+    function closeConfigModal() { document.getElementById('config-modal').classList.add('hidden'); }
+    function saveApiConfig() {
+      API_URL = document.getElementById('input-api-url').value.trim();
+      localStorage.setItem('gsheet_api_url', API_URL);
+      closeConfigModal();
+      fetchFromGoogleSheets();
+      alert("Đã lưu API URL thành công!");
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initWeekDropdown();
+      fetchFromGoogleSheets();
+    });
+  </script>
+</body>
+</html>
