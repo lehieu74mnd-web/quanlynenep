@@ -291,7 +291,15 @@
 
       try {
         const res = await fetch(`${API_URL}?week=${currentWeek}`);
-        const data = await res.json();
+        const textRes = await res.text();
+        
+        let data;
+        try {
+          data = JSON.parse(textRes);
+        } catch (e) {
+          console.error("Dữ liệu trả về không phải JSON chuẩn:", textRes);
+          throw new Error("Phản hồi từ Google Apps Script không hợp lệ (Kiểm tra lại quyền truy cập hoặc deploy).");
+        }
 
         if (data.status === 'success') {
           scoresMapData = data.scoresMap || {};
@@ -303,7 +311,7 @@
       } catch (err) {
         console.error("Lỗi kết nối API:", err);
         if (tbody) {
-          tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-rose-500 font-medium"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Không thể kết nối. Vui lòng bấm nút "Cập Nhật".</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-rose-500 font-medium"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Lỗi kết nối API: ${err.message}. Vui lòng kiểm tra lại URL Apps Script hoặc quyền truy cập "Anyone".</td></tr>`;
         }
       } finally {
         if (spin) spin.classList.remove('fa-spin');
