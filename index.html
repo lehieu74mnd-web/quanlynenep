@@ -291,26 +291,55 @@
     }
 
     // Lấy điểm trực tiếp từ dữ liệu Google Sheets đã tổng hợp sẵn
+   // Lấy điểm thông minh: Ưu tiên đọc từ Google Sheets (dashboardScores), nếu không có tự động tính bù từ incidents
     function calculateClassScores() {
+      const BASE_POINTS = 320;
       return CLASSES.map(cls => {
-        const dash = dashboardScores[cls.name] || {
-          coDoMinus: 0,
-          sdbMinus: 0,
-          vangMinus: 0,
-          rewardPlus: 0,
-          totalScore: 320,
-          avgScore: 10
-        };
+        const dash = dashboardScores[cls.name];
+        
+        // Nếu sheet DASHBOARD_TUAN đã có dữ liệu đầy đủ thì lấy trực tiếp
+        if (dash && (dash.totalScore !== undefined && dash.totalScore !== 320 || dash.sdbMinus > 0 || dash.coDoMinus > 0 || dash.vangMinus > 0)) {
+          return {
+            ...cls,
+            sdbMinus: Number(dash.sdbMinus) || 0,
+            coDoMinus: Number(dash.coDoMinus) || 0,
+            vangMinus: Number(dash.vangMinus) || 0,
+            rewardPlus: Number(dash.rewardPlus) || 0,
+            totalScore: Number(dash.totalScore) || 320,
+            avgScore: Number(dash.avgScore) || 10
+          };
+        }
 
-        return {
-          ...cls,
-          sdbMinus: dash.sdbMinus,
-          coDoMinus: dash.coDoMinus,
-          vangMinus: dash.vangMinus,
-          rewardPlus: dash.rewardPlus,
-          totalScore: dash.totalScore,
-          avgScore: Number(dash.avgScore) || 10
-        };
+        // --- CƠ CHẾ DỰ PHÒNG AN TOÀN (Fallback) ---
+        // Nếu dashboardScores chưa sẵn sàng, tự động tính toán chuẩn xác từ incidents & absents
+        const classIncidents = incidents.filter(i => i.lop === cls.name && Number(i.week) === currentWeek);
+        let sdbMinus = 0, coDoMinus = 0, rewardPlus = 0;
+
+        classIncidents.forEach(inc => {
+          const cat = (inc.category || '').toLowerCase();
+          const note = (inc.note || '').toLowerCase();
+          const isAbsent = cat.includes('vắng') || cat.includes('vang') || note.includes('vắng') || note.includes('vang');
+          
+          if (isAbsent) return; // Bỏ qua lỗi vắng trong nhật ký để tránh tính đúp
+
+          if (inc.points > 0) {
+            rewardPlus += inc.points;
+          } else if (inc.source === 'TRỰC CỜ ĐỎ') {
+            coDoMinus += Math.abs(inc.points);
+          } else {
+            sdbMinus += Math.abs(inc.points);
+          }
+        });
+
+        // Lấy điểm trừ vắng từ dữ liệu chuyên cần
+        const ab = absents[cls.name] || {};
+        const vangMinus = Number(ab.totalMinus) || 0;
+
+        const totalMinus = sdbMinus + coDoMinus + vangMinus;
+        const totalScore = BASE_POINTS - totalMinus + rewardPlus;
+        const avgScore = Number((totalScore / BASE_POINTS * 10).toFixed(2));
+
+        return { ...cls, sdbMinus, coDoMinus, vangMinus, rewardPlus, totalScore, avgScore };
       });
     }
 
