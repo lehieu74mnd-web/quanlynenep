@@ -337,7 +337,7 @@
       return scores;
     }
 
-    function renderRankingTable() {
+   function renderRankingTable() {
       const selectedKhoi = document.getElementById('filter-khoi').value;
       let scores = getCalculatedScoresWithRanks();
 
@@ -383,7 +383,6 @@
         `;
       }).join('');
     }
-
     function renderClassDetailView(className) {
       const scores = getCalculatedScoresWithRanks();
       const clsData = scores.find(c => c.name.trim().toUpperCase() === className.trim().toUpperCase()) || scores[0];
