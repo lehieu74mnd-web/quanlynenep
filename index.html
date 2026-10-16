@@ -291,30 +291,13 @@
       }
     }
 
-   function getClassAbsentData(className) {
-      let p = 0;
-      let kp = 0;
-
-      // Lọc chính xác các sự việc vắng của lớp trong tuần hiện tại từ mảng incidents
-      const classIncidents = incidents.filter(i => i.lop === className && Number(i.week) === currentWeek);
-      
-      classIncidents.forEach(inc => {
-        const cat = (inc.category || '').toLowerCase();
-        const note = (inc.note || '').toLowerCase();
-        
-        if (cat.includes('vắng') || cat.includes('vang') || note.includes('vắng') || note.includes('vang')) {
-          if (cat.includes('không phép') || cat.includes('khong phep') || note.includes('không phép')) {
-            kp += 1;
-          } else {
-            p += 1;
-          }
-        }
-      });
-
-      // Tính chính xác số điểm trừ: 1 phép = 1 điểm, 1 không phép = 10 điểm
-      const totalMinus = p + (kp * 10);
-      return { p, kp, totalMinus };
+  // 1. Lấy dữ liệu chuyên cần trực tiếp từ API (đọc từ sheet CHUYEN_CAN_35W)
+    function getClassAbsentData(className) {
+      const ab = absents[className] || { p: 0, kp: 0, totalMinus: 0 };
+      return ab; // Trả về đúng số liệu p, kp và tổng điểm trừ vắng từ Google Sheets
     }
+
+    // 2. Tính toán điểm chuẩn xác, đồng bộ hoàn toàn với Google Sheets
     function calculateClassScores() {
       const BASE_POINTS = 320;
       return CLASSES.map(cls => {
@@ -327,15 +310,18 @@
           else sdbMinus += Math.abs(inc.points);
         });
 
+        // Lấy điểm trừ vắng chuẩn từ Google Sheets
         const abData = getClassAbsentData(cls.name);
-        const totalMinus = sdbMinus + coDoMinus + abData.totalMinus;
+        const vangMinus = abData.totalMinus || 0;
+
+        // Tổng điểm trừ = Trừ SĐB + Trừ Cờ Đỏ + Trừ Vắng (Chuyên cần)
+        const totalMinus = sdbMinus + coDoMinus + vangMinus;
         const totalScore = BASE_POINTS - totalMinus + rewardPlus;
         const avgScore = Number((totalScore / BASE_POINTS * 10).toFixed(2));
 
-        return { ...cls, sdbMinus, coDoMinus, vangMinus: abData.totalMinus, rewardPlus, totalScore, avgScore };
+        return { ...cls, sdbMinus, coDoMinus, vangMinus: vangMinus, rewardPlus, totalScore, avgScore };
       });
     }
-
     function renderRankingTable() {
       const selectedKhoi = document.getElementById('filter-khoi').value;
       let scores = calculateClassScores();
