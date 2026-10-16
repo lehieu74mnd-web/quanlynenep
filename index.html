@@ -106,7 +106,7 @@
             <h2 class="text-base md:text-lg font-bold text-blue-950 flex items-center gap-2">
               <i class="fa-solid fa-medal text-amber-500"></i> BẢNG XẾP HẠNG THI ĐUA NỀ NẾP <span id="label-current-week-title" class="text-blue-600">TUẦN 1</span>
             </h2>
-            <p class="text-xs text-slate-500 mt-0.5">Điểm chuẩn: 320 điểm | Tải dữ liệu siêu tốc & đồng bộ tự động</p>
+            <p class="text-xs text-slate-500 mt-0.5">Điểm chuẩn: 320 điểm | Đồng bộ chuẩn xác 100% từ Google Sheets</p>
           </div>
           <div class="flex items-center gap-2 no-print">
             <span class="text-xs font-semibold text-slate-600">Lọc khối lớp:</span>
@@ -218,7 +218,7 @@
     let API_URL = "https://script.google.com/macros/s/AKfycbz7F8wFGw8pvUIi7iJsSJcD--_8fh7PLz7vbQbNgfN9XTkS3eqXJNhyEP9gIETxUHwWmg/exec";
 
     let incidents = [];
-    let absents = {};
+    let scoresMapData = {};
 
     function formatDateVN(dateVal) {
       if (!dateVal) return '-';
@@ -255,19 +255,15 @@
       fetchFromGoogleSheets(true);
     }
 
-    // Tối ưu tốc độ với thời gian chờ 30 giây chống Cold Start
- // Tải dữ liệu siêu tốc tích hợp Bộ nhớ đệm (Session Cache)
     async function fetchFromGoogleSheets(forceRefresh = false) {
       const cacheKey = `thutha_week_${currentWeek}`;
-      
-      // Nếu không bắt buộc làm mới và có sẵn cache, load ngay lập tức
       if (!forceRefresh) {
         const cachedData = sessionStorage.getItem(cacheKey);
         if (cachedData) {
           try {
             const parsed = JSON.parse(cachedData);
             incidents = parsed.incidents;
-            absents = parsed.absents;
+            scoresMapData = parsed.scoresMapData;
             refreshAllViews();
             return;
           } catch(e) {}
@@ -279,7 +275,7 @@
 
       const tbody = document.getElementById('ranking-tbody');
       if (tbody && forceRefresh) {
-        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-blue-600 font-medium"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang đồng bộ dữ liệu mới từ Google Sheets...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-blue-600 font-medium"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang đồng bộ dữ liệu chuẩn từ Google Sheets...</td></tr>`;
       }
 
       const controller = new AbortController();
@@ -291,7 +287,7 @@
         const data = await res.json();
 
         if (data.status === 'success') {
-          absents = data.absents || {};
+          scoresMapData = data.scoresMap || {};
           const rawIncidents = data.incidents || [];
           
           const seen = new Set();
@@ -302,8 +298,7 @@
             return true;
           });
 
-          // Lưu vào sessionStorage để lần sau mở lên xem là có ngay
-          sessionStorage.setItem(cacheKey, JSON.stringify({ incidents, absents }));
+          sessionStorage.setItem(cacheKey, JSON.stringify({ incidents, scoresMapData }));
           refreshAllViews();
         } else {
           throw new Error(data.message || "Lỗi dữ liệu từ Server");
@@ -318,60 +313,25 @@
       }
     }
 
+    // Lấy điểm và xếp hạng đồng nhất trực tiếp từ Google Sheets
     function getCalculatedScoresWithRanks() {
       const BASE_POINTS = 320;
       let scores = CLASSES.map(cls => {
-        const classIncidents = incidents.filter(i => i.lop && i.lop.trim().toUpperCase() === cls.name.trim().toUpperCase() && Number(i.week) === currentWeek);
-        let sdbMinus = 0, coDoMinus = 0, vangMinus = 0, rewardPlus = 0;
+        const sheetData = scoresMapData[cls.name] || {
+          coDoMinus: 0, sdbMinus: 0, vangMinus: 0, rewardPlus: 0,
+          totalScore: BASE_POINTS, avgScore: 10, rankInKhoi: 1
+        };
 
-        classIncidents.forEach(inc => {
-          const cat = (inc.category || '').toLowerCase();
-          const note = (inc.note || '').toLowerCase();
-          const source = (inc.source || '').toUpperCase();
-          let rawPoints = parseFloat(inc.points) || 0;
-
-          const isAbsent = cat.includes('vắng') || cat.includes('vang') || note.includes('vắng') || note.includes('vang');
-
-          if (rawPoints < 0) {
-            const absVal = Math.abs(rawPoints);
-            if (isAbsent) {
-              vangMinus += absVal;
-            } else if (source.includes('CỜ ĐỎ')) {
-              coDoMinus += absVal;
-            } else {
-              sdbMinus += absVal;
-            }
-          } else if (rawPoints > 0) {
-            if (cat.includes('thưởng') || source.includes('THƯỞNG') || cat.includes('cộng')) {
-              rewardPlus += rawPoints;
-            }
-          }
-        });
-
-        for (let key in absents) {
-          if (key && key.trim().toUpperCase() === cls.name.trim().toUpperCase()) {
-            vangMinus += Number(absents[key].totalMinus) || 0;
-            break;
-          }
-        }
-
-        const totalMinus = sdbMinus + coDoMinus + vangMinus;
-        const totalScore = BASE_POINTS - totalMinus + rewardPlus;
-        const avgScore = Number((totalScore / BASE_POINTS * 10).toFixed(2));
-
-        return { ...cls, sdbMinus, coDoMinus, vangMinus, rewardPlus, totalScore, avgScore, rankInKhoi: 1 };
-      });
-
-      ['10', '11', '12'].forEach(kh => {
-        const khoiClasses = scores.filter(c => c.khoi === kh);
-        khoiClasses.sort((a, b) => b.totalScore - a.totalScore || a.name.localeCompare(b.name));
-        khoiClasses.forEach((c, idx) => {
-          if (idx > 0 && c.totalScore === khoiClasses[idx - 1].totalScore) {
-            c.rankInKhoi = khoiClasses[idx - 1].rankInKhoi;
-          } else {
-            c.rankInKhoi = idx + 1;
-          }
-        });
+        return {
+          ...cls,
+          sdbMinus: sheetData.sdbMinus,
+          coDoMinus: sheetData.coDoMinus,
+          vangMinus: sheetData.vangMinus,
+          rewardPlus: sheetData.rewardPlus,
+          totalScore: sheetData.totalScore,
+          avgScore: sheetData.avgScore,
+          rankInKhoi: sheetData.rankInKhoi
+        };
       });
 
       return scores;
