@@ -281,11 +281,11 @@
     }
 
     // Hàm tính toán cốt lõi: xử lý chuẩn xác điểm trừ SĐB, Cờ đỏ, Vắng chuyên cần và xếp hạng chuẩn
-    function getCalculatedScoresWithRanks() {
+function getCalculatedScoresWithRanks() {
       const BASE_POINTS = 320;
       let scores = CLASSES.map(cls => {
         const classIncidents = incidents.filter(i => i.lop.trim().toUpperCase() === cls.name.trim().toUpperCase() && Number(i.week) === currentWeek);
-        let sdbMinus = 0, coDoMinus = 0, rewardPlus = 0;
+        let sdbMinus = 0, coDoMinus = 0, vangMinus = 0, rewardPlus = 0;
 
         classIncidents.forEach(inc => {
           const cat = (inc.category || '').toLowerCase();
@@ -293,10 +293,14 @@
           const source = (inc.source || '').toUpperCase();
           let rawPoints = parseFloat(inc.points) || 0;
 
-          // Nếu sự việc mang điểm trừ (points < 0)
+          // Kiểm tra xem sự việc có phải là lỗi vắng hay không
+          const isAbsent = cat.includes('vắng') || cat.includes('vang') || note.includes('vắng') || note.includes('vang');
+
           if (rawPoints < 0) {
             const absVal = Math.abs(rawPoints);
-            if (source.includes('CỜ ĐỎ')) {
+            if (isAbsent) {
+              vangMinus += absVal; // Cộng dồn vào điểm trừ vắng
+            } else if (source.includes('CỜ ĐỎ')) {
               coDoMinus += absVal;
             } else {
               sdbMinus += absVal;
@@ -308,11 +312,10 @@
           }
         });
 
-        // Lấy điểm trừ vắng từ sheet chuyên cần (khớp chính xác tên lớp không phân biệt hoa thường/khoảng trắng)
-        let vangMinus = 0;
+        // Bổ sung thêm điểm trừ vắng từ sheet chuyên cần (nếu có)
         for (let key in absents) {
           if (key.trim().toUpperCase() === cls.name.trim().toUpperCase()) {
-            vangMinus = Number(absents[key].totalMinus) || 0;
+            vangMinus += Number(absents[key].totalMinus) || 0;
             break;
           }
         }
@@ -327,7 +330,6 @@
       // SẮP XẾP VÀ TÍNH XẾP HẠNG KHỐI CHUẨN XÁC THEO ĐIỂM SỐ GIẢM DẦN
       ['10', '11', '12'].forEach(kh => {
         const khoiClasses = scores.filter(c => c.khoi === kh);
-        // Sắp xếp giảm dần theo tổng điểm, nếu điểm bằng nhau thì xếp theo tên lớp
         khoiClasses.sort((a, b) => b.totalScore - a.totalScore || a.name.localeCompare(b.name));
         khoiClasses.forEach((c, idx) => {
           if (idx > 0 && c.totalScore === khoiClasses[idx - 1].totalScore) {
@@ -340,7 +342,6 @@
 
       return scores;
     }
-
     function renderRankingTable() {
       const selectedKhoi = document.getElementById('filter-khoi').value;
       let scores = getCalculatedScoresWithRanks();
