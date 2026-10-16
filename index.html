@@ -363,7 +363,7 @@
         return;
       }
 
-      tbody.innerHTML = displayClasses.map((item, index) => {
+      tbody.innerHTML = displayClasses.map((item, index) => {tbody.innerHTML = displayClasses.map((item, index) => {
         let badgeClass = item.rankInKhoi === 1 ? 'bg-amber-100 text-amber-800 border border-amber-300' : 
                          (item.rankInKhoi === 2 ? 'bg-slate-200 text-slate-800 border border-slate-300' : 
                          (item.rankInKhoi === 3 ? 'bg-amber-700/20 text-amber-900 border border-amber-600/30' : 'bg-slate-100 text-slate-600'));
