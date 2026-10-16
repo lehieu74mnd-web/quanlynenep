@@ -326,26 +326,26 @@
           totalScore: BASE_POINTS, avgScore: 10, rankInKhoi: 1
         };
 
-        let sdb = Math.abs(Number(sheetData.sdbMinus) || 0);
         let coDo = Math.abs(Number(sheetData.coDoMinus) || 0);
+        let sdb = Math.abs(Number(sheetData.sdbMinus) || 0);
         let vang = Math.abs(Number(sheetData.vangMinus) || 0);
         let reward = Math.abs(Number(sheetData.rewardPlus) || 0);
 
-        // Đọc tổng điểm trực tiếp từ Google Sheet, nếu không tìm thấy mới tự động tính
+        // Ưu tiên đọc Tổng điểm từ sheet, nếu không có sẽ tự động tính theo công thức
         let rawTotal = Number(sheetData.totalScore) || 0;
-        let total = rawTotal > 0 ? (rawTotal > 50 ? rawTotal : Number((rawTotal * 32).toFixed(0))) : (BASE_POINTS - sdb - coDo - vang + reward);
+        let total = rawTotal > 0 ? (rawTotal > 50 ? rawTotal : Number((rawTotal * 32).toFixed(0))) : (BASE_POINTS - coDo - sdb - vang + reward);
         
         // Chuẩn hóa Điểm TB luôn bằng Tổng điểm chia 32 (hệ 10)
         let avg = Number((total / 32).toFixed(2));
 
         return {
           ...cls,
-          sdbMinus: sdb,
-          coDoMinus: coDo,
-          vangMinus: vang,
-          rewardPlus: reward,
-          totalScore: total,     // Hiển thị chuẩn thang 320
-          avgScore: avg,         // Hiển thị chuẩn hệ 10
+          coDoMinus: coDo,      // Trừ Cờ Đỏ
+          sdbMinus: sdb,        // Trừ SĐB
+          vangMinus: vang,      // Trừ Vắng
+          rewardPlus: reward,   // Cộng Thưởng
+          totalScore: total,    // Tổng điểm thang 320
+          avgScore: avg,        // Điểm TB hệ 10
           rankInKhoi: Number(sheetData.rankInKhoi) || 1
         };
       });
