@@ -318,17 +318,16 @@
       }
     }
 
-   function getCalculatedScoresWithRanks() {
+    function getCalculatedScoresWithRanks() {
       const BASE_POINTS = 320;
       let scores = CLASSES.map(cls => {
         const sheetData = scoresMapData[cls.name] || {
           coDoMinus: 0, sdbMinus: 0, vangMinus: 0, rewardPlus: 0,
-          totalScore: BASE_POINTS, rankInKhoi: 1
+          totalScore: BASE_POINTS, avgScore: 10, rankInKhoi: 1
         };
 
         let total = Number(sheetData.totalScore) || BASE_POINTS;
-        // Tự động tính điểm TB chuẩn từ tổng điểm (Thang điểm 10)
-        let calculatedAvg = Number((total / 32).toFixed(2));
+        let avg = Number(sheetData.avgScore) || Number((total / 32).toFixed(2));
 
         return {
           ...cls,
@@ -337,13 +336,14 @@
           vangMinus: Number(sheetData.vangMinus) || 0,
           rewardPlus: Number(sheetData.rewardPlus) || 0,
           totalScore: total,
-          avgScore: calculatedAvg, // Gán chuẩn xác giá trị điểm TB
+          avgScore: avg,
           rankInKhoi: Number(sheetData.rankInKhoi) || 1
         };
       });
 
       return scores;
     }
+
     function renderRankingTable() {
       const selectedKhoi = document.getElementById('filter-khoi').value;
       let scores = getCalculatedScoresWithRanks();
@@ -384,13 +384,13 @@
             <td class="py-2.5 px-2 font-bold ${item.coDoMinus > 0 ? 'text-red-500' : 'text-slate-400'}">${item.coDoMinus > 0 ? '-' + item.coDoMinus : '-'}</td>
             <td class="py-2.5 px-2 font-bold ${item.rewardPlus > 0 ? 'text-emerald-600' : 'text-slate-400'}">${item.rewardPlus > 0 ? '+' + item.rewardPlus : '-'}</td>
             <td class="py-2.5 px-3 font-extrabold text-blue-950 bg-blue-50/40">${item.totalScore}</td>
-            <!-- Hiển thị chính xác Điểm TB tính theo công thức an toàn -->
             <td class="py-2.5 px-3 font-extrabold text-emerald-700">${Number(item.avgScore).toFixed(2)}</td>
             <td class="py-2.5 px-3"><span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${badgeClass}">Hạng ${item.rankInKhoi}</span></td>
           </tr>
         `;
       }).join('');
     }
+
     function renderClassDetailView(className) {
       const scores = getCalculatedScoresWithRanks();
       const clsData = scores.find(c => c.name.trim().toUpperCase() === className.trim().toUpperCase()) || scores[0];
