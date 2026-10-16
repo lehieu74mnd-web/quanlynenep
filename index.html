@@ -106,7 +106,7 @@
             <h2 class="text-base md:text-lg font-bold text-blue-950 flex items-center gap-2">
               <i class="fa-solid fa-medal text-amber-500"></i> BẢNG XẾP HẠNG THI ĐUA NỀ NẾP <span id="label-current-week-title" class="text-blue-600">TUẦN 1</span>
             </h2>
-            <p class="text-xs text-slate-500 mt-0.5">Điểm chuẩn: 320 điểm | Tốc độ tải siêu nhanh với bộ nhớ đệm thông minh</p>
+            <p class="text-xs text-slate-500 mt-0.5">Điểm chuẩn: 320 điểm | Tự động tính toán thứ hạng đồng nhất 100%</p>
           </div>
           <div class="flex items-center gap-2 no-print">
             <span class="text-xs font-semibold text-slate-600">Lọc khối lớp:</span>
@@ -136,7 +136,6 @@
               </tr>
             </thead>
             <tbody id="ranking-tbody" class="divide-y divide-slate-100">
-              <!-- Skeleton Loading mặc định khi load lần đầu -->
               <tr><td colspan="10" class="text-center py-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin text-blue-600 text-xl mr-2"></i> Đang tải dữ liệu thi đua...</td></tr>
             </tbody>
           </table>
@@ -250,26 +249,11 @@
       currentWeek = Number(val);
       document.getElementById('label-current-week-title').innerText = "TUẦN " + currentWeek;
       document.getElementById('label-current-week-sub').innerText = "TUẦN " + currentWeek;
-      fetchFromGoogleSheets();
+      sessionStorage.clear(); // Xóa sạch cache khi chuyển tuần để không lưu sai thứ hạng
+      fetchFromGoogleSheets(true);
     }
 
-    // Tối ưu tốc độ tải với sessionStorage Cache
     async function fetchFromGoogleSheets(forceRefresh = false) {
-      const cacheKey = `thutha_week_${currentWeek}`;
-      
-      if (!forceRefresh) {
-        const cachedData = sessionStorage.getItem(cacheKey);
-        if (cachedData) {
-          try {
-            const parsed = JSON.parse(cachedData);
-            incidents = parsed.incidents;
-            absents = parsed.absents;
-            refreshAllViews();
-            return;
-          } catch(e) {}
-        }
-      }
-
       const spin = document.getElementById('sync-spin');
       spin.classList.add('fa-spin');
       try {
@@ -279,7 +263,6 @@
           absents = data.absents || {};
           const rawIncidents = data.incidents || [];
           
-          // Khử trùng lặp cực nhanh bằng Map
           const seen = new Set();
           incidents = rawIncidents.filter(i => {
             const uniqueKey = `${i.date}_${i.lop}_${i.category}_${i.points}`;
@@ -288,8 +271,6 @@
             return true;
           });
 
-          // Lưu vào bộ nhớ đệm sessionStorage để lần sau tải tức thì
-          sessionStorage.setItem(cacheKey, JSON.stringify({ incidents, absents }));
           refreshAllViews();
         }
       } catch (err) {
@@ -299,10 +280,10 @@
       }
     }
 
-    // Tính toán điểm nhanh chóng
-    function calculateClassScores() {
+    // Hàm tính điểm và thứ hạng chuẩn mực dùng chung cho cả 2 Tab
+    function getCalculatedScoresWithRanks() {
       const BASE_POINTS = 320;
-      return CLASSES.map(cls => {
+      let scores = CLASSES.map(cls => {
         const classIncidents = incidents.filter(i => i.lop === cls.name && Number(i.week) === currentWeek);
         let sdbMinus = 0, coDoMinus = 0, rewardPlus = 0;
 
@@ -334,14 +315,10 @@
         const totalScore = BASE_POINTS - totalMinus + rewardPlus;
         const avgScore = Number((totalScore / BASE_POINTS * 10).toFixed(2));
 
-        return { ...cls, sdbMinus, coDoMinus, vangMinus, rewardPlus, totalScore, avgScore };
+        return { ...cls, sdbMinus, coDoMinus, vangMinus, rewardPlus, totalScore, avgScore, rankInKhoi: 1 };
       });
-    }
 
-    function renderRankingTable() {
-      const selectedKhoi = document.getElementById('filter-khoi').value;
-      let scores = calculateClassScores();
-
+      // TÍNH XẾP HẠNG KHỐI CHUẨN XÁC VÀ GÁN TRỰC TIẾP VÀO TỪNG ĐỐI TƯỢNG LỚP
       ['10', '11', '12'].forEach(kh => {
         const khoiClasses = scores.filter(c => c.khoi === kh);
         khoiClasses.sort((a, b) => b.totalScore - a.totalScore);
@@ -353,6 +330,13 @@
           }
         });
       });
+
+      return scores;
+    }
+
+    function renderRankingTable() {
+      const selectedKhoi = document.getElementById('filter-khoi').value;
+      let scores = getCalculatedScoresWithRanks();
 
       let displayClasses = scores;
       if (selectedKhoi !== 'ALL') {
@@ -393,7 +377,7 @@
     }
 
     function renderClassDetailView(className) {
-      const scores = calculateClassScores();
+      const scores = getCalculatedScoresWithRanks();
       const clsData = scores.find(c => c.name === className) || scores[0];
 
       document.getElementById('class-summary-cards').innerHTML = `
@@ -405,7 +389,7 @@
         <div class="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-xl">
           <p class="text-[10px] uppercase font-bold text-emerald-800">Điểm Thi Đua Tuần ${currentWeek}</p>
           <p class="text-xl font-black text-emerald-700 mt-0.5">${clsData.totalScore} đ (${clsData.avgScore.toFixed(2)})</p>
-          <p class="text-[11px] text-emerald-600 font-semibold">Xếp hạng: Hạng ${clsData.rankInKhoi || 1} Khối</p>
+          <p class="text-[11px] text-emerald-600 font-semibold">Xếp hạng: Hạng ${clsData.rankInKhoi} Khối</p>
         </div>
         <div class="p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl">
           <p class="text-[10px] uppercase font-bold text-amber-800">Điểm Trừ Vắng</p>
