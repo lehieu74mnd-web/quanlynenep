@@ -106,7 +106,7 @@
             <h2 class="text-base md:text-lg font-bold text-blue-950 flex items-center gap-2">
               <i class="fa-solid fa-medal text-amber-500"></i> BẢNG XẾP HẠNG THI ĐUA NỀ NẾP <span id="label-current-week-title" class="text-blue-600">TUẦN 1</span>
             </h2>
-            <p class="text-xs text-slate-500 mt-0.5">Điểm chuẩn: 320 điểm | Chuẩn hóa toàn diện dữ liệu điểm trừ & chuyên cần</p>
+            <p class="text-xs text-slate-500 mt-0.5">Điểm chuẩn: 320 điểm | Chuẩn hóa toàn diện điểm trừ vắng & xếp hạng khối</p>
           </div>
           <div class="flex items-center gap-2 no-print">
             <span class="text-xs font-semibold text-slate-600">Lọc khối lớp:</span>
@@ -280,8 +280,8 @@
       }
     }
 
-    // Hàm tính toán cốt lõi: xử lý chuẩn xác điểm trừ SĐB, Cờ đỏ, Vắng chuyên cần và xếp hạng chuẩn
-function getCalculatedScoresWithRanks() {
+    // Hàm tính toán và gom điểm trừ vắng chính xác tuyệt đối
+    function getCalculatedScoresWithRanks() {
       const BASE_POINTS = 320;
       let scores = CLASSES.map(cls => {
         const classIncidents = incidents.filter(i => i.lop.trim().toUpperCase() === cls.name.trim().toUpperCase() && Number(i.week) === currentWeek);
@@ -293,13 +293,13 @@ function getCalculatedScoresWithRanks() {
           const source = (inc.source || '').toUpperCase();
           let rawPoints = parseFloat(inc.points) || 0;
 
-          // Kiểm tra xem sự việc có phải là lỗi vắng hay không
+          // Nhận diện lỗi vắng từ nội dung hoặc danh mục
           const isAbsent = cat.includes('vắng') || cat.includes('vang') || note.includes('vắng') || note.includes('vang');
 
           if (rawPoints < 0) {
             const absVal = Math.abs(rawPoints);
             if (isAbsent) {
-              vangMinus += absVal; // Cộng dồn vào điểm trừ vắng
+              vangMinus += absVal;
             } else if (source.includes('CỜ ĐỎ')) {
               coDoMinus += absVal;
             } else {
@@ -309,158 +309,3 @@ function getCalculatedScoresWithRanks() {
             if (cat.includes('thưởng') || source.includes('THƯỞNG') || cat.includes('cộng')) {
               rewardPlus += rawPoints;
             }
-          }
-        });
-
-        // Bổ sung thêm điểm trừ vắng từ sheet chuyên cần (nếu có)
-        for (let key in absents) {
-          if (key.trim().toUpperCase() === cls.name.trim().toUpperCase()) {
-            vangMinus += Number(absents[key].totalMinus) || 0;
-            break;
-          }
-        }
-
-        const totalMinus = sdbMinus + coDoMinus + vangMinus;
-        const totalScore = BASE_POINTS - totalMinus + rewardPlus;
-        const avgScore = Number((totalScore / BASE_POINTS * 10).toFixed(2));
-
-        return { ...cls, sdbMinus, coDoMinus, vangMinus, rewardPlus, totalScore, avgScore, rankInKhoi: 1 };
-      });
-
-      // SẮP XẾP VÀ TÍNH XẾP HẠNG KHỐI CHUẨN XÁC THEO ĐIỂM SỐ GIẢM DẦN
-      ['10', '11', '12'].forEach(kh => {
-        const khoiClasses = scores.filter(c => c.khoi === kh);
-        khoiClasses.sort((a, b) => b.totalScore - a.totalScore || a.name.localeCompare(b.name));
-        khoiClasses.forEach((c, idx) => {
-          if (idx > 0 && c.totalScore === khoiClasses[idx - 1].totalScore) {
-            c.rankInKhoi = khoiClasses[idx - 1].rankInKhoi;
-          } else {
-            c.rankInKhoi = idx + 1;
-          }
-        });
-      });
-
-      return scores;
-    }
-    function renderRankingTable() {
-      const selectedKhoi = document.getElementById('filter-khoi').value;
-      let scores = getCalculatedScoresWithRanks();
-
-      let displayClasses = scores;
-      if (selectedKhoi !== 'ALL') {
-        displayClasses = scores.filter(c => c.khoi === selectedKhoi);
-        displayClasses.sort((a, b) => a.rankInKhoi - b.rankInKhoi);
-      } else {
-        displayClasses.sort((a, b) => a.khoi.localeCompare(b.khoi) || a.rankInKhoi - b.rankInKhoi);
-      }
-
-      let totalIncidentsCount = incidents.filter(i => Number(i.week) === currentWeek).length;
-      let totalVangMinusSum = scores.reduce((sum, c) => sum + c.vangMinus, 0);
-      let schoolAvgScore = scores.length > 0 ? (scores.reduce((sum, c) => sum + c.avgScore, 0) / scores.length).toFixed(2) : "10";
-
-      document.getElementById('stat-total-incidents').innerText = totalIncidentsCount + " LƯỢT";
-      document.getElementById('stat-total-absent').innerText = totalVangMinusSum + " ĐIỂM";
-      document.getElementById('stat-avg-score').innerText = schoolAvgScore + " / 10";
-
-      const tbody = document.getElementById('ranking-tbody');
-      tbody.innerHTML = displayClasses.map((item, index) => {
-        let badgeClass = item.rankInKhoi === 1 ? 'bg-amber-100 text-amber-800 border border-amber-300' : 
-                         (item.rankInKhoi === 2 ? 'bg-slate-200 text-slate-800 border border-slate-300' : 
-                         (item.rankInKhoi === 3 ? 'bg-amber-700/20 text-amber-900 border border-amber-600/30' : 'bg-slate-100 text-slate-600'));
-        return `
-          <tr class="hover:bg-blue-50/40 transition border-b border-slate-100 text-center">
-            <td class="py-2.5 px-3 font-semibold text-slate-500">${index + 1}</td>
-            <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[11px] bg-slate-100 font-bold text-slate-600">${item.khoi}</span></td>
-            <td class="py-2.5 px-4 font-bold text-blue-950 text-left cursor-pointer hover:underline text-blue-700" onclick="lookupClassDirectly('${item.name}')">${item.name}</td>
-            <td class="py-2.5 px-2 font-bold ${item.sdbMinus > 0 ? 'text-rose-600' : 'text-slate-400'}">${item.sdbMinus > 0 ? '-' + item.sdbMinus : '-'}</td>
-            <td class="py-2.5 px-2 font-bold ${item.vangMinus > 0 ? 'text-amber-600' : 'text-slate-400'}">${item.vangMinus > 0 ? '-' + item.vangMinus : '-'}</td>
-            <td class="py-2.5 px-2 font-bold ${item.coDoMinus > 0 ? 'text-red-500' : 'text-slate-400'}">${item.coDoMinus > 0 ? '-' + item.coDoMinus : '-'}</td>
-            <td class="py-2.5 px-2 font-bold ${item.rewardPlus > 0 ? 'text-emerald-600' : 'text-slate-400'}">${item.rewardPlus > 0 ? '+' + item.rewardPlus : '-'}</td>
-            <td class="py-2.5 px-3 font-extrabold text-blue-950 bg-blue-50/40">${item.totalScore}</td>
-            <td class="py-2.5 px-3 font-extrabold text-emerald-700">${item.avgScore.toFixed(2)}</td>
-            <td class="py-2.5 px-3"><span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${badgeClass}">Hạng ${item.rankInKhoi}</span></td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function renderClassDetailView(className) {
-      const scores = getCalculatedScoresWithRanks();
-      const clsData = scores.find(c => c.name.trim().toUpperCase() === className.trim().toUpperCase()) || scores[0];
-
-      document.getElementById('class-summary-cards').innerHTML = `
-        <div class="p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl">
-          <p class="text-[10px] uppercase font-bold text-blue-800">Chi Đoàn / Lớp</p>
-          <p class="text-xl font-black text-blue-950 mt-0.5">${clsData.name}</p>
-          <p class="text-[11px] text-slate-500">Sĩ số: ${clsData.ss} học sinh (Khối ${clsData.khoi})</p>
-        </div>
-        <div class="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-xl">
-          <p class="text-[10px] uppercase font-bold text-emerald-800">Điểm Thi Đua Tuần ${currentWeek}</p>
-          <p class="text-xl font-black text-emerald-700 mt-0.5">${clsData.totalScore} đ (${clsData.avgScore.toFixed(2)})</p>
-          <p class="text-[11px] text-emerald-600 font-semibold">Xếp hạng: Hạng ${clsData.rankInKhoi} Khối</p>
-        </div>
-        <div class="p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl">
-          <p class="text-[10px] uppercase font-bold text-amber-800">Điểm Trừ Vắng</p>
-          <p class="text-xl font-black text-amber-700 mt-0.5">-${clsData.vangMinus} đ</p>
-          <p class="text-[11px] text-amber-600 font-medium">Chuyên cần tuần này</p>
-        </div>
-        <div class="p-3.5 bg-rose-50/70 border border-rose-200 rounded-xl">
-          <p class="text-[10px] uppercase font-bold text-rose-800">Tổng Điểm Bị Trừ</p>
-          <p class="text-xl font-black text-rose-700 mt-0.5">-${clsData.sdbMinus + clsData.coDoMinus + clsData.vangMinus} đ</p>
-          <p class="text-[11px] text-rose-600 font-medium">SĐB: -${clsData.sdbMinus} | Cờ đỏ: -${clsData.coDoMinus} | Vắng: -${clsData.vangMinus}</p>
-        </div>
-      `;
-
-      const classIncidents = incidents.filter(i => i.lop.trim().toUpperCase() === className.trim().toUpperCase() && Number(i.week) === currentWeek);
-      const tbodyInc = document.getElementById('class-incidents-tbody');
-      if (classIncidents.length === 0) {
-        tbodyInc.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 italic">Lớp thực hiện nề nếp rất tốt trong tuần này, không có vi phạm nào.</td></tr>`;
-      } else {
-        tbodyInc.innerHTML = classIncidents.map(i => `
-          <tr class="hover:bg-slate-50 border-b">
-            <td class="py-2.5 px-3 font-semibold text-blue-900">${formatDateVN(i.date)}</td>
-            <td class="py-2.5 px-3 text-slate-600">${i.day || ''} - ${i.session || ''}</td>
-            <td class="py-2.5 px-3 font-bold text-slate-800">${i.student || 'Tập thể'}</td>
-            <td class="py-2.5 px-3 text-slate-700">${i.category}</td>
-            <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 font-semibold">${i.source}</span></td>
-            <td class="py-2.5 px-3 text-center font-bold ${i.points > 0 ? 'text-emerald-600' : 'text-rose-600'}">${i.points > 0 ? '+' + i.points : i.points} đ</td>
-            <td class="py-2.5 px-3 text-slate-500">${i.note || ''}</td>
-          </tr>
-        `).join('');
-      }
-    }
-
-    function lookupClassDirectly(className) {
-      document.getElementById('select-class-lookup').value = className;
-      switchTab('tab-class-detail');
-      renderClassDetailView(className);
-    }
-
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('border-blue-900', 'text-blue-900', 'font-semibold');
-        btn.classList.add('border-transparent', 'text-slate-500', 'font-medium');
-      });
-      document.getElementById(tabId).classList.remove('hidden');
-      document.getElementById('btn-' + tabId)?.classList.add('border-blue-900', 'text-blue-900', 'font-semibold');
-
-      if (tabId === 'tab-class-detail') {
-        const curLop = document.getElementById('select-class-lookup').value || '10A1';
-        renderClassDetailView(curLop);
-      }
-    }
-
-    function refreshAllViews() {
-      renderRankingTable();
-      const curLop = document.getElementById('select-class-lookup').value || '10A1';
-      renderClassDetailView(curLop);
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      initWeekDropdown();
-      fetchFromGoogleSheets();
-    });
-  </script>
-</body>
-</html>
