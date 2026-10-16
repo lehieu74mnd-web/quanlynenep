@@ -369,11 +369,31 @@
     }
 
     function renderClassDetailView(className) {
-      const scores = calculateClassScores();
-      const clsData = scores.find(c => c.name === className) || scores[0];
-      const ab = absents[className] || { p: 0, kp: 0 };
+      const scores = getCalculatedScoresWithRanks();
+      const clsData = scores.find(c => c.name.trim().toUpperCase() === className.trim().toUpperCase()) || scores[0];
 
-      // Render 4 Summary Cards của lớp
+      // Lọc các sự việc của lớp trong tuần hiện tại
+      const classIncidents = incidents.filter(i => i.lop && i.lop.trim().toUpperCase() === className.trim().toUpperCase() && Number(i.week) === currentWeek);
+
+      // Tự động tính số buổi vắng từ danh sách vi phạm chuyên cần
+      let totalVangBuoi = 0;
+      let vangCoPhep = 0;
+      let vangKhongPhep = 0;
+
+      classIncidents.forEach(i => {
+        const cat = (i.category || "").toLowerCase();
+        const note = (i.note || "").toLowerCase();
+        if (cat.includes("vắng") || note.includes("vắng")) {
+          // Trích xuất số lượng học sinh hoặc số buổi vắng nếu có trong nội dung
+          if (cat.includes("không phép")) {
+            vangKhongPhep += 1;
+          } else {
+            vangCoPhep += 1;
+          }
+          totalVangBuoi += 1;
+        }
+      });
+
       document.getElementById('class-summary-cards').innerHTML = `
         <div class="p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl">
           <p class="text-[10px] uppercase font-bold text-blue-800">Chi Đoàn / Lớp</p>
@@ -382,13 +402,13 @@
         </div>
         <div class="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-xl">
           <p class="text-[10px] uppercase font-bold text-emerald-800">Điểm Thi Đua Tuần ${currentWeek}</p>
-          <p class="text-xl font-black text-emerald-700 mt-0.5">${clsData.totalScore} đ (${clsData.avgScore})</p>
-          <p class="text-[11px] text-emerald-600 font-semibold">Xếp hạng: Hạng ${clsData.rankInKhoi || 1} Khối</p>
+          <p class="text-xl font-black text-emerald-700 mt-0.5">${clsData.totalScore} đ (${Number(clsData.avgScore).toFixed(2)})</p>
+          <p class="text-[11px] text-emerald-600 font-semibold">Xếp hạng: Hạng ${clsData.rankInKhoi} Khối</p>
         </div>
         <div class="p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl">
           <p class="text-[10px] uppercase font-bold text-amber-800">Chuyên Cần Tuần Này</p>
-          <p class="text-xl font-black text-amber-700 mt-0.5">${ab.p + ab.kp} buổi vắng</p>
-          <p class="text-[11px] text-amber-600 font-medium">${ab.p} có phép • ${ab.kp} không phép</p>
+          <p class="text-xl font-black text-amber-700 mt-0.5">${totalVangBuoi} lượt vắng</p>
+          <p class="text-[11px] text-amber-600 font-semibold">${vangCoPhep} có phép • ${vangKhongPhep} không phép</p>
         </div>
         <div class="p-3.5 bg-rose-50/70 border border-rose-200 rounded-xl">
           <p class="text-[10px] uppercase font-bold text-rose-800">Tổng Điểm Bị Trừ</p>
@@ -397,16 +417,14 @@
         </div>
       `;
 
-      // Render danh sách lỗi của riêng lớp này
-      const classIncidents = incidents.filter(i => i.lop === className);
       const tbodyInc = document.getElementById('class-incidents-tbody');
       if (classIncidents.length === 0) {
-        tbodyInc.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 italic">Lớp thực hiện nề nếp rất tốt, không có sự việc vi phạm nào được ghi nhận.</td></tr>`;
+        tbodyInc.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 italic">Lớp thực hiện nề nếp rất tốt trong tuần này, không có vi phạm nào.</td></tr>`;
       } else {
         tbodyInc.innerHTML = classIncidents.map(i => `
           <tr class="hover:bg-slate-50 border-b">
             <td class="py-2.5 px-3 font-semibold text-blue-900">${formatDateVN(i.date)}</td>
-            <td class="py-2.5 px-3 text-slate-600">${i.day} - ${i.session}</td>
+            <td class="py-2.5 px-3 text-slate-600">${i.day || ''} - ${i.session || ''}</td>
             <td class="py-2.5 px-3 font-bold text-slate-800">${i.student || 'Tập thể'}</td>
             <td class="py-2.5 px-3 text-slate-700">${i.category}</td>
             <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 font-semibold">${i.source}</span></td>
@@ -415,23 +433,7 @@
           </tr>
         `).join('');
       }
-
-      // Render lưới 32 tuần chuyên cần của lớp
-      const gridAttendance = document.getElementById('class-attendance-grid');
-      let gridHtml = '';
-      for (let w = 1; w <= 32; w++) {
-        const isCurrent = w === currentWeek;
-        const minusPts = (w === 1 && sample_t1_minus[className]) ? sample_t1_minus[className] : 0;
-        gridHtml += `
-          <div class="p-2 rounded-lg border text-center ${isCurrent ? 'bg-blue-100 border-blue-500 font-bold' : 'bg-white border-slate-200'} w-20">
-            <div class="text-[10px] text-slate-500 font-semibold">Tuần ${w}</div>
-            <div class="text-xs ${minusPts > 0 ? 'text-rose-600 font-bold' : 'text-emerald-600 font-semibold'}">${minusPts > 0 ? '-' + minusPts + ' đ' : '0 đ'}</div>
-          </div>
-        `;
-      }
-      gridAttendance.innerHTML = gridHtml;
     }
-
     function lookupClassDirectly(className) {
       document.getElementById('select-class-lookup').value = className;
       switchTab('tab-class-detail');
