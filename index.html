@@ -29,7 +29,7 @@
         <div class="flex items-center gap-1.5 bg-blue-950/70 px-3 py-1.5 rounded-lg border border-blue-800">
           <label class="text-xs font-bold text-amber-300">TUẦN:</label>
           <select id="select-week" onchange="changeWeek(this.value)" class="text-xs bg-blue-900 text-white font-bold px-2 py-0.5 rounded border border-blue-700 focus:outline-none focus:ring-1 focus:ring-amber-400">
-            <!-- 35 tuần được tạo tự động ngay khi load -->
+            <!-- 35 tuần -->
           </select>
         </div>
 
@@ -106,7 +106,7 @@
             <h2 class="text-base md:text-lg font-bold text-blue-950 flex items-center gap-2">
               <i class="fa-solid fa-medal text-amber-500"></i> BẢNG XẾP HẠNG THI ĐUA NỀ NẾP <span id="label-current-week-title" class="text-blue-600">TUẦN 1</span>
             </h2>
-            <p class="text-xs text-slate-500 mt-0.5">Điểm chuẩn: 320 điểm | Tải dữ liệu siêu tốc & tự động đồng bộ</p>
+            <p class="text-xs text-slate-500 mt-0.5">Điểm chuẩn: 320 điểm | Tải dữ liệu siêu tốc & đồng bộ tự động</p>
           </div>
           <div class="flex items-center gap-2 no-print">
             <span class="text-xs font-semibold text-slate-600">Lọc khối lớp:</span>
@@ -255,13 +255,18 @@
       fetchFromGoogleSheets(true);
     }
 
-    // Hàm gọi API với cơ chế Timeout (8 giây) để chống treo giao diện
+    // Tối ưu tốc độ với thời gian chờ 30 giây chống Cold Start
     async function fetchFromGoogleSheets(forceRefresh = false) {
       const spin = document.getElementById('sync-spin');
       if (spin) spin.classList.add('fa-spin');
 
+      const tbody = document.getElementById('ranking-tbody');
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-blue-600 font-medium"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang kết nối máy chủ Google Sheets...</td></tr>`;
+      }
+
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 giây timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 giây
 
       try {
         const res = await fetch(`${API_URL}?week=${currentWeek}`, { signal: controller.signal });
@@ -286,17 +291,14 @@
         }
       } catch (err) {
         console.error("Lỗi kết nối API:", err);
-        // Hiển thị thông báo khi lỗi kết nối hoặc timeout
-        const tbody = document.getElementById('ranking-tbody');
         if (tbody) {
-          tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-rose-500 font-medium"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Không thể tải dữ liệu từ Google Sheets. Vui lòng bấm "Cập Nhật" hoặc kiểm tra lại Web App.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-rose-500 font-medium"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Không thể kết nối. Vui lòng kiểm tra lại quyền Deploy "Anyone" của Web App.</td></tr>`;
         }
       } finally {
         if (spin) spin.classList.remove('fa-spin');
       }
     }
 
-    // Hàm tính toán cốt lõi: xử lý chuẩn xác điểm trừ SĐB, Cờ đỏ, Vắng chuyên cần và xếp hạng
     function getCalculatedScoresWithRanks() {
       const BASE_POINTS = 320;
       let scores = CLASSES.map(cls => {
@@ -476,7 +478,6 @@
       renderClassDetailView(curLop);
     }
 
-    // Đảm bảo chạy khởi tạo dropdown ngay lập tức khi trang load xong
     window.addEventListener('DOMContentLoaded', () => {
       initWeekDropdown();
       fetchFromGoogleSheets();
