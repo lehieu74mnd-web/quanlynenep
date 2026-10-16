@@ -326,8 +326,26 @@
           totalScore: BASE_POINTS, avgScore: 10, rankInKhoi: 1
         };
 
-        let total = Number(sheetData.totalScore) || BASE_POINTS;
-        let avg = Number(sheetData.avgScore) || Number((total / 32).toFixed(2));
+        let rawVal1 = Number(sheetData.totalScore) || 0;
+        let rawVal2 = Number(sheetData.avgScore) || 0;
+
+        let total = BASE_POINTS;
+        let avg = 10;
+
+        // Tự động phân loại thông minh: Giá trị nào > 15 chắc chắn là Tổng Điểm, < 15 chắc chắn là Điểm TB
+        if (rawVal1 > 15) {
+          total = rawVal1;
+          avg = rawVal2 > 0 ? rawVal2 : Number((total / 32).toFixed(2));
+        } else if (rawVal2 > 15) {
+          total = rawVal2;
+          avg = rawVal1 > 0 ? rawVal1 : Number((total / 32).toFixed(2));
+        } else {
+          // Trường hợp cả hai đều nhỏ (nếu sheet đang bị lỗi nhẹ), quy đổi ngược từ điểm TB hoặc cộng thưởng
+          let reward = Math.abs(Number(sheetData.rewardPlus) || 0);
+          let minus = Math.abs(Number(sheetData.sdbMinus) || 0) + Math.abs(Number(sheetData.coDoMinus) || 0) + Math.abs(Number(sheetData.vangMinus) || 0);
+          total = BASE_POINTS - minus + reward;
+          avg = Number((total / 32).toFixed(2));
+        }
 
         return {
           ...cls,
@@ -335,8 +353,8 @@
           coDoMinus: Number(sheetData.coDoMinus) || 0,
           vangMinus: Number(sheetData.vangMinus) || 0,
           rewardPlus: Number(sheetData.rewardPlus) || 0,
-          totalScore: total,
-          avgScore: avg,
+          totalScore: total,      // Hiển thị chuẩn thang 320 (ví dụ: 319)
+          avgScore: avg,          // Hiển thị chuẩn hệ 10 (ví dụ: 9.97)
           rankInKhoi: Number(sheetData.rankInKhoi) || 1
         };
       });
