@@ -291,11 +291,11 @@
       }
     }
 
-    // ĐẾM SỐ BUỔI VẮNG CHÍNH XÁC TUYỆT ĐỐI TỪ NHẬT KÝ VI PHẠM (KHÔNG CỘNG DỒN KÉP)
-    function getClassAbsentData(className) {
+   function getClassAbsentData(className) {
       let p = 0;
       let kp = 0;
 
+      // Lọc chính xác các sự việc vắng của lớp trong tuần hiện tại từ mảng incidents
       const classIncidents = incidents.filter(i => i.lop === className && Number(i.week) === currentWeek);
       
       classIncidents.forEach(inc => {
@@ -311,10 +311,10 @@
         }
       });
 
-      const totalMinus = (p * 1) + (kp * 10);
+      // Tính chính xác số điểm trừ: 1 phép = 1 điểm, 1 không phép = 10 điểm
+      const totalMinus = p + (kp * 10);
       return { p, kp, totalMinus };
     }
-
     function calculateClassScores() {
       const BASE_POINTS = 320;
       return CLASSES.map(cls => {
