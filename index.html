@@ -400,14 +400,28 @@
       const scores = getCalculatedScoresWithRanks();
       const clsData = scores.find(c => c.name.trim().toUpperCase() === className.trim().toUpperCase()) || scores[0];
 
+      // Lọc danh sách vi phạm của lớp được chọn
       const classIncidents = incidents.filter(i => i.lop && i.lop.trim().toUpperCase() === className.trim().toUpperCase() && Number(i.week) === currentWeek);
 
       let totalVangBuoi = 0;
       let vangCoPhep = 0;
       let vangKhongPhep = 0;
 
+      // Cộng dồn điểm trừ thực tế trực tiếp từ Nhật ký vi phạm
+      let calcSdbMinus = 0;
+      let calcCoDoMinus = 0;
+
       classIncidents.forEach(i => {
+        const src = (i.source || "").toUpperCase();
+        const pts = Math.abs(Number(i.points) || 0);
         const textCheck = ((i.category || "") + " " + (i.note || "")).toLowerCase();
+
+        if (src.includes("SỔ ĐẦU BÀI") || src.includes("SĐB")) {
+          calcSdbMinus += pts;
+        } else if (src.includes("CỜ ĐỎ") || src.includes("TRỰC CỜ ĐỎ")) {
+          calcCoDoMinus += pts;
+        }
+
         if (textCheck.includes("vắng")) {
           totalVangBuoi += 1;
           if (textCheck.includes("không phép") || textCheck.includes("kp")) {
@@ -418,7 +432,12 @@
         }
       });
 
-      let totalDeducted = clsData.sdbMinus + clsData.coDoMinus + clsData.vangMinus;
+      // Lấy giá trị lớn nhất đảm bảo không bị sót điểm trừ vi phạm
+      let finalSdbMinus = Math.max(clsData.sdbMinus, calcSdbMinus);
+      let finalCoDoMinus = Math.max(clsData.coDoMinus, calcCoDoMinus);
+      let finalVangMinus = clsData.vangMinus;
+
+      let totalDeducted = finalSdbMinus + finalCoDoMinus + finalVangMinus;
 
       const cardsContainer = document.getElementById('class-summary-cards');
       if (cardsContainer) {
@@ -441,7 +460,7 @@
           <div class="p-3.5 bg-rose-50/70 border border-rose-200 rounded-xl">
             <p class="text-[10px] uppercase font-bold text-rose-800">Tổng Điểm Bị Trừ</p>
             <p class="text-xl font-black text-rose-700 mt-0.5">-${totalDeducted} đ</p>
-            <p class="text-[11px] text-rose-600 font-medium">SĐB: -${clsData.sdbMinus} | Cờ đỏ: -${clsData.coDoMinus} ${clsData.vangMinus > 0 ? '| Vắng: -' + clsData.vangMinus : ''}</p>
+            <p class="text-[11px] text-rose-600 font-medium">SĐB: -${finalSdbMinus} | Cờ đỏ: -${finalCoDoMinus} ${finalVangMinus > 0 ? '| Vắng: -' + finalVangMinus : ''}</p>
           </div>
         `;
       }
