@@ -326,9 +326,31 @@
           totalScore: BASE_POINTS, avgScore: 10, rankInKhoi: 1
         };
 
-        let coDo = Math.abs(Number(sheetData.coDoMinus) || 0);
-        let sdb = Math.abs(Number(sheetData.sdbMinus) || 0);
-        let vang = Math.abs(Number(sheetData.vangMinus) || 0);
+        // Tính trực tiếp điểm trừ từ danh sách sự việc vi phạm để đối soát
+        let calcSdb = 0;
+        let calcCoDo = 0;
+        let calcVang = 0;
+
+        const classIncidents = incidents.filter(i => i.lop && i.lop.trim().toUpperCase() === cls.name.trim().toUpperCase() && Number(i.week) === currentWeek);
+        
+        classIncidents.forEach(i => {
+          const src = (i.source || "").toUpperCase();
+          const pts = Math.abs(Number(i.points) || 0);
+          const catNote = ((i.category || "") + " " + (i.note || "")).toLowerCase();
+
+          if (catNote.includes("vắng")) {
+            calcVang += pts;
+          } else if (src.includes("SỔ ĐẦU BÀI") || src.includes("SĐB")) {
+            calcSdb += pts;
+          } else if (src.includes("CỜ ĐỎ") || src.includes("TRỰC CỜ ĐỎ")) {
+            calcCoDo += pts;
+          }
+        });
+
+        // Lấy giá trị chính xác lớn nhất giữa dữ liệu Google Sheet và Nhật ký vi phạm
+        let coDo = Math.max(Math.abs(Number(sheetData.coDoMinus) || 0), calcCoDo);
+        let sdb = Math.max(Math.abs(Number(sheetData.sdbMinus) || 0), calcSdb);
+        let vang = Math.max(Math.abs(Number(sheetData.vangMinus) || 0), calcVang);
         let reward = Math.abs(Number(sheetData.rewardPlus) || 0);
 
         let total = Number(sheetData.totalScore) || (BASE_POINTS - coDo - sdb - vang + reward);
@@ -362,7 +384,7 @@
       }
 
       let totalIncidentsCount = incidents.filter(i => Number(i.week) === currentWeek).length;
-      let totalVangMinusSum = scores.reduce((sum, c) => sum + c.vangMinus, 0);
+      let totalVangMinusSum = scores.reduce((sum, c) => sum + (c.vangMinus > 0 ? 1 : 0), 0);
       let schoolAvgScore = scores.length > 0 ? (scores.reduce((sum, c) => sum + c.avgScore, 0) / scores.length).toFixed(2) : "10";
 
       document.getElementById('stat-total-incidents').innerText = totalIncidentsCount + " LƯỢT";
@@ -400,28 +422,14 @@
       const scores = getCalculatedScoresWithRanks();
       const clsData = scores.find(c => c.name.trim().toUpperCase() === className.trim().toUpperCase()) || scores[0];
 
-      // Lọc danh sách vi phạm của lớp được chọn
       const classIncidents = incidents.filter(i => i.lop && i.lop.trim().toUpperCase() === className.trim().toUpperCase() && Number(i.week) === currentWeek);
 
       let totalVangBuoi = 0;
       let vangCoPhep = 0;
       let vangKhongPhep = 0;
 
-      // Cộng dồn điểm trừ thực tế trực tiếp từ Nhật ký vi phạm
-      let calcSdbMinus = 0;
-      let calcCoDoMinus = 0;
-
       classIncidents.forEach(i => {
-        const src = (i.source || "").toUpperCase();
-        const pts = Math.abs(Number(i.points) || 0);
         const textCheck = ((i.category || "") + " " + (i.note || "")).toLowerCase();
-
-        if (src.includes("SỔ ĐẦU BÀI") || src.includes("SĐB")) {
-          calcSdbMinus += pts;
-        } else if (src.includes("CỜ ĐỎ") || src.includes("TRỰC CỜ ĐỎ")) {
-          calcCoDoMinus += pts;
-        }
-
         if (textCheck.includes("vắng")) {
           totalVangBuoi += 1;
           if (textCheck.includes("không phép") || textCheck.includes("kp")) {
@@ -432,12 +440,7 @@
         }
       });
 
-      // Lấy giá trị lớn nhất đảm bảo không bị sót điểm trừ vi phạm
-      let finalSdbMinus = Math.max(clsData.sdbMinus, calcSdbMinus);
-      let finalCoDoMinus = Math.max(clsData.coDoMinus, calcCoDoMinus);
-      let finalVangMinus = clsData.vangMinus;
-
-      let totalDeducted = finalSdbMinus + finalCoDoMinus + finalVangMinus;
+      let totalDeducted = clsData.sdbMinus + clsData.coDoMinus + clsData.vangMinus;
 
       const cardsContainer = document.getElementById('class-summary-cards');
       if (cardsContainer) {
@@ -460,7 +463,7 @@
           <div class="p-3.5 bg-rose-50/70 border border-rose-200 rounded-xl">
             <p class="text-[10px] uppercase font-bold text-rose-800">Tổng Điểm Bị Trừ</p>
             <p class="text-xl font-black text-rose-700 mt-0.5">-${totalDeducted} đ</p>
-            <p class="text-[11px] text-rose-600 font-medium">SĐB: -${finalSdbMinus} | Cờ đỏ: -${finalCoDoMinus} ${finalVangMinus > 0 ? '| Vắng: -' + finalVangMinus : ''}</p>
+            <p class="text-[11px] text-rose-600 font-medium">SĐB: -${clsData.sdbMinus} | Cờ đỏ: -${clsData.coDoMinus} ${clsData.vangMinus > 0 ? '| Vắng: -' + clsData.vangMinus : ''}</p>
           </div>
         `;
       }
