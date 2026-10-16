@@ -215,7 +215,7 @@
     ];
 
     let currentWeek = 1;
-    let API_URL = "https://script.google.com/macros/s/AKfycbyYcpqKrPpkKhFbBR2uEOYcjfuhGpadfAGtok__hhGIKmhuC5zBrY1NvUeeeXmxLaIJlw/exec";
+    let API_URL = "https://script.google.com/macros/s/AKfycbxXfQJScsrKMDT59C35ZKHRUMYAHD4nXKiYMwhEdA6bEah_8tpqphqlxtSneZ6caSaNWw/exec";
 
     let incidents = [];
     let scoresMapData = {};
@@ -313,7 +313,6 @@
       }
     }
 
-    // Lấy điểm và xếp hạng đồng nhất trực tiếp từ Google Sheets
     function getCalculatedScoresWithRanks() {
       const BASE_POINTS = 320;
       let scores = CLASSES.map(cls => {
