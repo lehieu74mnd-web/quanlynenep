@@ -298,7 +298,7 @@
           data = JSON.parse(textRes);
         } catch (e) {
           console.error("Dữ liệu trả về không phải JSON chuẩn:", textRes);
-          throw new Error("Phản hồi từ Google Apps Script không hợp lệ (Kiểm tra lại quyền truy cập hoặc deploy).");
+          throw new Error("Phản hồi từ Google Apps Script không hợp lệ.");
         }
 
         if (data.status === 'success') {
@@ -311,7 +311,7 @@
       } catch (err) {
         console.error("Lỗi kết nối API:", err);
         if (tbody) {
-          tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-rose-500 font-medium"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Lỗi kết nối API: ${err.message}. Vui lòng kiểm tra lại URL Apps Script hoặc quyền truy cập "Anyone".</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-rose-500 font-medium"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Lỗi kết nối API: ${err.message}.</td></tr>`;
         }
       } finally {
         if (spin) spin.classList.remove('fa-spin');
@@ -331,21 +331,17 @@
         let vang = Math.abs(Number(sheetData.vangMinus) || 0);
         let reward = Math.abs(Number(sheetData.rewardPlus) || 0);
 
-        // Ưu tiên đọc Tổng điểm từ sheet, nếu không có sẽ tự động tính theo công thức
-        let rawTotal = Number(sheetData.totalScore) || 0;
-        let total = rawTotal > 0 ? (rawTotal > 50 ? rawTotal : Number((rawTotal * 32).toFixed(0))) : (BASE_POINTS - coDo - sdb - vang + reward);
-        
-        // Chuẩn hóa Điểm TB luôn bằng Tổng điểm chia 32 (hệ 10)
-        let avg = Number((total / 32).toFixed(2));
+        let total = Number(sheetData.totalScore) || (BASE_POINTS - coDo - sdb - vang + reward);
+        let avg = Number(sheetData.avgScore) || Number((total / 32).toFixed(2));
 
         return {
           ...cls,
-          coDoMinus: coDo,      // Trừ Cờ Đỏ
-          sdbMinus: sdb,        // Trừ SĐB
-          vangMinus: vang,      // Trừ Vắng
-          rewardPlus: reward,   // Cộng Thưởng
-          totalScore: total,    // Tổng điểm thang 320
-          avgScore: avg,        // Điểm TB hệ 10
+          coDoMinus: coDo,
+          sdbMinus: sdb,
+          vangMinus: vang,
+          rewardPlus: reward,
+          totalScore: total,
+          avgScore: avg,
           rankInKhoi: Number(sheetData.rankInKhoi) || 1
         };
       });
