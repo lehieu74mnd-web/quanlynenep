@@ -341,7 +341,7 @@
       return scores;
     }
 
-    function renderRankingTable() {
+  function renderRankingTable() {
       const selectedKhoi = document.getElementById('filter-khoi').value;
       let scores = getCalculatedScoresWithRanks();
 
@@ -381,7 +381,9 @@
             <td class="py-2.5 px-2 font-bold ${item.coDoMinus > 0 ? 'text-red-500' : 'text-slate-400'}">${item.coDoMinus > 0 ? '-' + item.coDoMinus : '-'}</td>
             <td class="py-2.5 px-2 font-bold ${item.rewardPlus > 0 ? 'text-emerald-600' : 'text-slate-400'}">${item.rewardPlus > 0 ? '+' + item.rewardPlus : '-'}</td>
             <td class="py-2.5 px-3 font-extrabold text-blue-950 bg-blue-50/40">${item.totalScore}</td>
+            <!-- Đảm bảo cột Điểm TB hiển thị đúng giá trị thực tế item.avgScore từ sheet -->
             <td class="py-2.5 px-3 font-extrabold text-emerald-700">${Number(item.avgScore).toFixed(2)}</td>
+            <!-- Cột Vị Thứ hiển thị đúng thứ hạng khối item.rankInKhoi -->
             <td class="py-2.5 px-3"><span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${badgeClass}">Hạng ${item.rankInKhoi}</span></td>
           </tr>
         `;
