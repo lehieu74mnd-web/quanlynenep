@@ -189,4 +189,297 @@
           </div>
           <div class="flex items-center gap-2">
             <label class="text-xs font-bold text-slate-700">Chọn Lớp Cần Tra Cứu:</label>
-            <select id="select-class-lookup" onchange="renderClassDetailView(this.value)" class="text-xs border-2 border-blue-700 font-bold text-blue-950 rounded-xl px-
+            <select id="select-class-lookup" onchange="renderClassDetailView(this.value)" class="text-xs border-2 border-blue-700 font-bold text-blue-950 rounded-xl px-3 py-1.5 bg-blue-50 focus:outline-none">
+              <!-- Render 30 lớp -->
+            </select>
+          </div>
+        </div>
+
+        <!-- Thống kê nhanh -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 my-5" id="class-summary-cards">
+          <!-- Render by JS -->
+        </div>
+
+        <!-- Chi tiết vi phạm -->
+        <div class="space-y-3">
+          <h3 class="text-xs md:text-sm font-bold text-blue-950 flex items-center gap-2">
+            <i class="fa-solid fa-list-check text-rose-500"></i> CHI TIẾT CÁC SỰ VIỆC GHI NHẬN TRONG <span id="label-current-week-sub">TUẦN 6</span>
+          </h3>
+          <div class="overflow-x-auto border rounded-xl">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-50">
+                  <th class="py-2.5 px-3">Ngày Vi Phạm</th>
+                  <th class="py-2.5 px-3">Thứ - Buổi</th>
+                  <th class="py-2.5 px-3">Học Sinh Vi Phạm</th>
+                  <th class="py-2.5 px-3">Nội Dung Vi Phạm</th>
+                  <th class="py-2.5 px-3">Nguồn Ghi</th>
+                  <th class="py-2.5 px-3 text-center">Điểm Trừ/Cộng</th>
+                  <th class="py-2.5 px-3">Ghi Chú Minh Chứng</th>
+                </tr>
+              </thead>
+              <tbody id="class-incidents-tbody" class="divide-y divide-slate-100">
+                <!-- Render chi tiết lỗi -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const CLASSES = [
+      { name: '10A1', khoi: '10', ss: 44 }, { name: '10A2', khoi: '10', ss: 43 },
+      { name: '10A3', khoi: '10', ss: 44 }, { name: '10A4', khoi: '10', ss: 43 },
+      { name: '10A5', khoi: '10', ss: 44 }, { name: '10A6', khoi: '10', ss: 43 },
+      { name: '10A7', khoi: '10', ss: 44 }, { name: '10A8', khoi: '10', ss: 43 },
+      { name: '10A9', khoi: '10', ss: 44 }, { name: '10A10', khoi: '10', ss: 44 },
+      { name: '10A11', khoi: '10', ss: 43 },
+      { name: '11B1', khoi: '11', ss: 42 }, { name: '11B2', khoi: '11', ss: 43 },
+      { name: '11B3', khoi: '11', ss: 44 }, { name: '11B4', khoi: '11', ss: 42 },
+      { name: '11B5', khoi: '11', ss: 43 }, { name: '11B6', khoi: '11', ss: 42 },
+      { name: '11B7', khoi: '11', ss: 43 },
+      { name: '12C1', khoi: '12', ss: 42 }, { name: '12C2', khoi: '12', ss: 42 },
+      { name: '12C3', khoi: '12', ss: 44 }, { name: '12C4', khoi: '12', ss: 43 },
+      { name: '12C5', khoi: '12', ss: 44 }, { name: '12C6', khoi: '12', ss: 44 },
+      { name: '12C7', khoi: '12', ss: 40 }, { name: '12C8', khoi: '12', ss: 38 },
+      { name: '12C9', khoi: '12', ss: 42 }, { name: '12C10', khoi: '12', ss: 41 },
+      { name: '12C11', khoi: '12', ss: 42 }, { name: '12C12', khoi: '12', ss: 41 }
+    ];
+
+    let currentWeek = 6;
+    let API_URL = "https://script.google.com/macros/s/AKfycbxXfQJScsrKMDT59C35ZKHRUMYAHD4nXKiYMwhEdA6bEah_8tpqphqlxtSneZ6caSaNWw/exec";
+
+    let incidents = [];
+    let scoresMapData = {};
+
+    function formatDateVN(dateVal) {
+      if (!dateVal) return '-';
+      const str = dateVal.toString().trim();
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}\$/.test(str)) return str;
+      const d = new Date(str);
+      if (isNaN(d.getTime())) return str;
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+
+    function initClassDropdown() {
+      const selClass = document.getElementById('select-class-lookup');
+      if (selClass) {
+        selClass.innerHTML = CLASSES.map(c => `<option value="${c.name}">Lớp ${c.name} (Khối ${c.khoi})</option>`).join('');
+      }
+    }
+
+    function changeWeek(val) {
+      currentWeek = Number(val);
+      document.getElementById('label-current-week-title').innerText = "TUẦN " + currentWeek;
+      document.getElementById('label-current-week-sub').innerText = "TUẦN " + currentWeek;
+      fetchFromGoogleSheets(true);
+    }
+
+    async function fetchFromGoogleSheets(forceRefresh = false) {
+      const spin = document.getElementById('sync-spin');
+      if (spin) spin.classList.add('fa-spin');
+
+      const tbody = document.getElementById('ranking-tbody');
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-blue-600 font-medium"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang tải dữ liệu thi đua...</td></tr>`;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}?week=${currentWeek}`);
+        const data = await res.json();
+
+        if (data.status === 'success') {
+          scoresMapData = data.scoresMap || {};
+          incidents = data.incidents || [];
+          refreshAllViews();
+        } else {
+          throw new Error(data.message || "Lỗi dữ liệu từ Server");
+        }
+      } catch (err) {
+        console.error("Lỗi kết nối API:", err);
+        if (tbody) {
+          tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-rose-500 font-medium"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Không thể kết nối. Vui lòng bấm nút "Cập Nhật".</td></tr>`;
+        }
+      } finally {
+        if (spin) spin.classList.remove('fa-spin');
+      }
+    }
+
+    function getCalculatedScoresWithRanks() {
+      const BASE_POINTS = 320;
+      let scores = CLASSES.map(cls => {
+        const sheetData = scoresMapData[cls.name] || {
+          coDoMinus: 0, sdbMinus: 0, vangMinus: 0, rewardPlus: 0,
+          totalScore: BASE_POINTS, avgScore: 10, rankInKhoi: 1
+        };
+
+        return {
+          ...cls,
+          sdbMinus: Number(sheetData.sdbMinus) || 0,
+          coDoMinus: Number(sheetData.coDoMinus) || 0,
+          vangMinus: Number(sheetData.vangMinus) || 0,
+          rewardPlus: Number(sheetData.rewardPlus) || 0,
+          totalScore: Number(sheetData.totalScore) || BASE_POINTS,
+          avgScore: Number(sheetData.avgScore) || 10,
+          rankInKhoi: Number(sheetData.rankInKhoi) || 1
+        };
+      });
+
+      return scores;
+    }
+
+    function renderRankingTable() {
+      const selectedKhoi = document.getElementById('filter-khoi').value;
+      let scores = getCalculatedScoresWithRanks();
+
+      let displayClasses = scores;
+      if (selectedKhoi !== 'ALL') {
+        displayClasses = scores.filter(c => c.khoi === selectedKhoi);
+        displayClasses.sort((a, b) => a.rankInKhoi - b.rankInKhoi);
+      } else {
+        displayClasses.sort((a, b) => a.khoi.localeCompare(b.khoi) || a.rankInKhoi - b.rankInKhoi);
+      }
+
+      let totalIncidentsCount = incidents.filter(i => Number(i.week) === currentWeek).length;
+      let totalVangMinusSum = scores.reduce((sum, c) => sum + c.vangMinus, 0);
+      let schoolAvgScore = scores.length > 0 ? (scores.reduce((sum, c) => sum + c.avgScore, 0) / scores.length).toFixed(2) : "10";
+
+      document.getElementById('stat-total-incidents').innerText = totalIncidentsCount + " LƯỢT";
+      document.getElementById('stat-total-absent').innerText = totalVangMinusSum + " BUỔI";
+      document.getElementById('stat-avg-score').innerText = schoolAvgScore + " / 10";
+
+      const tbody = document.getElementById('ranking-tbody');
+      if (displayClasses.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-slate-400 italic">Chưa có dữ liệu thi đua trong tuần này.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = displayClasses.map((item, index) => {
+        let badgeClass = item.rankInKhoi === 1 ? 'bg-amber-100 text-amber-800 border border-amber-300' : 
+                         (item.rankInKhoi === 2 ? 'bg-slate-200 text-slate-800 border border-slate-300' : 
+                         (item.rankInKhoi === 3 ? 'bg-amber-700/20 text-amber-900 border border-amber-600/30' : 'bg-slate-100 text-slate-600'));
+        return `
+          <tr class="hover:bg-blue-50/40 transition border-b border-slate-100 text-center">
+            <td class="py-2.5 px-3 font-semibold text-slate-500">${index + 1}</td>
+            <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[11px] bg-slate-100 font-bold text-slate-600">${item.khoi}</span></td>
+            <td class="py-2.5 px-4 font-bold text-blue-950 text-left cursor-pointer hover:underline text-blue-700" onclick="lookupClassDirectly('${item.name}')">${item.name}</td>
+            <td class="py-2.5 px-2 font-bold ${item.sdbMinus > 0 ? 'text-rose-600' : 'text-slate-400'}">${item.sdbMinus > 0 ? '-' + item.sdbMinus : '-'}</td>
+            <td class="py-2.5 px-2 font-bold ${item.vangMinus > 0 ? 'text-amber-600' : 'text-slate-400'}">${item.vangMinus > 0 ? '-' + item.vangMinus : '-'}</td>
+            <td class="py-2.5 px-2 font-bold ${item.coDoMinus > 0 ? 'text-red-500' : 'text-slate-400'}">${item.coDoMinus > 0 ? '-' + item.coDoMinus : '-'}</td>
+            <td class="py-2.5 px-2 font-bold ${item.rewardPlus > 0 ? 'text-emerald-600' : 'text-slate-400'}">${item.rewardPlus > 0 ? '+' + item.rewardPlus : '-'}</td>
+            <td class="py-2.5 px-3 font-extrabold text-blue-950 bg-blue-50/40">${item.totalScore}</td>
+            <td class="py-2.5 px-3 font-extrabold text-emerald-700">${Number(item.avgScore).toFixed(2)}</td>
+            <td class="py-2.5 px-3"><span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${badgeClass}">Hạng ${item.rankInKhoi}</span></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderClassDetailView(className) {
+      const scores = getCalculatedScoresWithRanks();
+      const clsData = scores.find(c => c.name.trim().toUpperCase() === className.trim().toUpperCase()) || scores[0];
+
+      const classIncidents = incidents.filter(i => i.lop && i.lop.trim().toUpperCase() === className.trim().toUpperCase() && Number(i.week) === currentWeek);
+
+      let totalVangBuoi = 0;
+      let vangCoPhep = 0;
+      let vangKhongPhep = 0;
+
+      classIncidents.forEach(i => {
+        const textCheck = ((i.category || "") + " " + (i.note || "")).toLowerCase();
+        if (textCheck.includes("vắng")) {
+          totalVangBuoi += 1;
+          if (textCheck.includes("không phép") || textCheck.includes("kp")) {
+            vangKhongPhep += 1;
+          } else {
+            vangCoPhep += 1;
+          }
+        }
+      });
+
+      const cardsContainer = document.getElementById('class-summary-cards');
+      if (cardsContainer) {
+        cardsContainer.innerHTML = `
+          <div class="p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl">
+            <p class="text-[10px] uppercase font-bold text-blue-800">Chi Đoàn / Lớp</p>
+            <p class="text-xl font-black text-blue-950 mt-0.5">${clsData.name}</p>
+            <p class="text-[11px] text-slate-500">Sĩ số: ${clsData.ss} học sinh (Khối ${clsData.khoi})</p>
+          </div>
+          <div class="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-xl">
+            <p class="text-[10px] uppercase font-bold text-emerald-800">Điểm Thi Đua Tuần ${currentWeek}</p>
+            <p class="text-xl font-black text-emerald-700 mt-0.5">${clsData.totalScore} đ (${Number(clsData.avgScore).toFixed(2)})</p>
+            <p class="text-[11px] text-emerald-600 font-semibold">Xếp hạng: Hạng ${clsData.rankInKhoi} Khối</p>
+          </div>
+          <div class="p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl">
+            <p class="text-[10px] uppercase font-bold text-amber-800">Chuyên Cần Tuần Này</p>
+            <p class="text-xl font-black text-amber-700 mt-0.5">${totalVangBuoi} buổi vắng</p>
+            <p class="text-[11px] text-amber-600 font-semibold">${vangCoPhep} có phép • ${vangKhongPhep} không phép</p>
+          </div>
+          <div class="p-3.5 bg-rose-50/70 border border-rose-200 rounded-xl">
+            <p class="text-[10px] uppercase font-bold text-rose-800">Tổng Điểm Bị Trừ</p>
+            <p class="text-xl font-black text-rose-700 mt-0.5">-${clsData.sdbMinus + clsData.coDoMinus + clsData.vangMinus} đ</p>
+            <p class="text-[11px] text-rose-600 font-medium">SĐB: -${clsData.sdbMinus} | Cờ đỏ: -${clsData.coDoMinus}</p>
+          </div>
+        `;
+      }
+
+      const tbodyInc = document.getElementById('class-incidents-tbody');
+      if (tbodyInc) {
+        if (classIncidents.length === 0) {
+          tbodyInc.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 italic">Lớp thực hiện nề nếp rất tốt trong tuần này, không có vi phạm nào.</td></tr>`;
+        } else {
+          tbodyInc.innerHTML = classIncidents.map(i => `
+            <tr class="hover:bg-slate-50 border-b">
+              <td class="py-2.5 px-3 font-semibold text-blue-900">${formatDateVN(i.date)}</td>
+              <td class="py-2.5 px-3 text-slate-600">${i.day || ''} - ${i.session || ''}</td>
+              <td class="py-2.5 px-3 font-bold text-slate-800">${i.student || 'Tập thể'}</td>
+              <td class="py-2.5 px-3 text-slate-700">${i.category}</td>
+              <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 font-semibold">${i.source}</span></td>
+              <td class="py-2.5 px-3 text-center font-bold ${i.points > 0 ? 'text-emerald-600' : 'text-rose-600'}">${i.points > 0 ? '+' + i.points : i.points} đ</td>
+              <td class="py-2.5 px-3 text-slate-500">${i.note || ''}</td>
+            </tr>
+          `).join('');
+        }
+      }
+    }
+
+    function lookupClassDirectly(className) {
+      document.getElementById('select-class-lookup').value = className;
+      switchTab('tab-class-detail');
+      renderClassDetailView(className);
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('border-blue-900', 'text-blue-900', 'font-semibold');
+        btn.classList.add('border-transparent', 'text-slate-500', 'font-medium');
+      });
+      document.getElementById(tabId).classList.remove('hidden');
+      document.getElementById('btn-' + tabId)?.classList.add('border-blue-900', 'text-blue-900', 'font-semibold');
+
+      if (tabId === 'tab-class-detail') {
+        const curLop = document.getElementById('select-class-lookup').value || '10A1';
+        renderClassDetailView(curLop);
+      }
+    }
+
+    function refreshAllViews() {
+      renderRankingTable();
+      const curLop = document.getElementById('select-class-lookup').value || '10A1';
+      renderClassDetailView(curLop);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initClassDropdown();
+      document.getElementById('select-week').value = currentWeek;
+      fetchFromGoogleSheets();
+    });
+  </script>
+</body>
+</html>
