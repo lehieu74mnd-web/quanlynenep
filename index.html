@@ -318,7 +318,7 @@
       }
     }
 
-    function getCalculatedScoresWithRanks() {
+   function getCalculatedScoresWithRanks() {
       const BASE_POINTS = 320;
       let scores = CLASSES.map(cls => {
         const sheetData = scoresMapData[cls.name] || {
@@ -326,14 +326,21 @@
           totalScore: BASE_POINTS, avgScore: 10, rankInKhoi: 1
         };
 
+        let rawTotal = Number(sheetData.totalScore) || BASE_POINTS;
+        let rawAvg = Number(sheetData.avgScore) || 10;
+
+        // BẮT BỘC KHẮC PHÚC LỖI: Nếu avgScore bị gán nhầm thành số thứ tự (<= 30),
+        // tự động tính lại Điểm TB quy đổi về thang điểm 10 chính xác 100%.
+        let finalAvg = (rawAvg > 0 && rawAvg <= 10 && rawTotal === BASE_POINTS) ? rawAvg : (rawTotal / BASE_POINTS * 10);
+
         return {
           ...cls,
           sdbMinus: Number(sheetData.sdbMinus) || 0,
           coDoMinus: Number(sheetData.coDoMinus) || 0,
           vangMinus: Number(sheetData.vangMinus) || 0,
           rewardPlus: Number(sheetData.rewardPlus) || 0,
-          totalScore: Number(sheetData.totalScore) || BASE_POINTS,
-          avgScore: Number(sheetData.avgScore) || 10,
+          totalScore: rawTotal,
+          avgScore: finalAvg,
           rankInKhoi: Number(sheetData.rankInKhoi) || 1
         };
       });
@@ -341,7 +348,7 @@
       return scores;
     }
 
-  function renderRankingTable() {
+    function renderRankingTable() {
       const selectedKhoi = document.getElementById('filter-khoi').value;
       let scores = getCalculatedScoresWithRanks();
 
@@ -381,15 +388,13 @@
             <td class="py-2.5 px-2 font-bold ${item.coDoMinus > 0 ? 'text-red-500' : 'text-slate-400'}">${item.coDoMinus > 0 ? '-' + item.coDoMinus : '-'}</td>
             <td class="py-2.5 px-2 font-bold ${item.rewardPlus > 0 ? 'text-emerald-600' : 'text-slate-400'}">${item.rewardPlus > 0 ? '+' + item.rewardPlus : '-'}</td>
             <td class="py-2.5 px-3 font-extrabold text-blue-950 bg-blue-50/40">${item.totalScore}</td>
-            <!-- Đảm bảo cột Điểm TB hiển thị đúng giá trị thực tế item.avgScore từ sheet -->
+            <!-- Hiển thị chính xác Điểm TB tính theo công thức an toàn -->
             <td class="py-2.5 px-3 font-extrabold text-emerald-700">${Number(item.avgScore).toFixed(2)}</td>
-            <!-- Cột Vị Thứ hiển thị đúng thứ hạng khối item.rankInKhoi -->
             <td class="py-2.5 px-3"><span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${badgeClass}">Hạng ${item.rankInKhoi}</span></td>
           </tr>
         `;
       }).join('');
     }
-
     function renderClassDetailView(className) {
       const scores = getCalculatedScoresWithRanks();
       const clsData = scores.find(c => c.name.trim().toUpperCase() === className.trim().toUpperCase()) || scores[0];
