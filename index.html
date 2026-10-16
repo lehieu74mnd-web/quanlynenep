@@ -323,15 +323,12 @@
       let scores = CLASSES.map(cls => {
         const sheetData = scoresMapData[cls.name] || {
           coDoMinus: 0, sdbMinus: 0, vangMinus: 0, rewardPlus: 0,
-          totalScore: BASE_POINTS, avgScore: 10, rankInKhoi: 1
+          totalScore: BASE_POINTS, rankInKhoi: 1
         };
 
-        let rawTotal = Number(sheetData.totalScore) || BASE_POINTS;
-        let rawAvg = Number(sheetData.avgScore) || 10;
-
-        // BẮT BỘC KHẮC PHÚC LỖI: Nếu avgScore bị gán nhầm thành số thứ tự (<= 30),
-        // tự động tính lại Điểm TB quy đổi về thang điểm 10 chính xác 100%.
-        let finalAvg = (rawAvg > 0 && rawAvg <= 10 && rawTotal === BASE_POINTS) ? rawAvg : (rawTotal / BASE_POINTS * 10);
+        let total = Number(sheetData.totalScore) || BASE_POINTS;
+        // Tự động tính điểm TB chuẩn từ tổng điểm (Thang điểm 10)
+        let calculatedAvg = Number((total / 32).toFixed(2));
 
         return {
           ...cls,
@@ -339,15 +336,14 @@
           coDoMinus: Number(sheetData.coDoMinus) || 0,
           vangMinus: Number(sheetData.vangMinus) || 0,
           rewardPlus: Number(sheetData.rewardPlus) || 0,
-          totalScore: rawTotal,
-          avgScore: finalAvg,
+          totalScore: total,
+          avgScore: calculatedAvg, // Gán chuẩn xác giá trị điểm TB
           rankInKhoi: Number(sheetData.rankInKhoi) || 1
         };
       });
 
       return scores;
     }
-
     function renderRankingTable() {
       const selectedKhoi = document.getElementById('filter-khoi').value;
       let scores = getCalculatedScoresWithRanks();
