@@ -297,7 +297,7 @@
       return ab; // Trả về đúng số liệu p, kp và tổng điểm trừ vắng từ Google Sheets
     }
 
-    // 2. Tính toán điểm chuẩn xác, đồng bộ hoàn toàn với Google Sheets
+  // 2. Tính toán điểm chuẩn xác, đồng bộ hoàn toàn với Google Sheets
     function calculateClassScores() {
       const BASE_POINTS = 320;
       return CLASSES.map(cls => {
@@ -305,12 +305,23 @@
         let sdbMinus = 0, coDoMinus = 0, rewardPlus = 0;
 
         classIncidents.forEach(inc => {
-          if (inc.points > 0) rewardPlus += inc.points;
-          else if (inc.source === 'TRỰC CỜ ĐỎ') coDoMinus += Math.abs(inc.points);
-          else sdbMinus += Math.abs(inc.points);
+          const cat = (inc.category || '').toLowerCase();
+          const note = (inc.note || '').toLowerCase();
+          
+          // BỎ QUA các lỗi vắng trong nhật ký khi tính điểm trừ SĐB/Cờ đỏ (vì đã tính riêng qua sheet chuyên cần)
+          const isAbsentIncident = cat.includes('vắng') || cat.includes('vang') || note.includes('vắng') || note.includes('vang');
+          if (isAbsentIncident) return; 
+
+          if (inc.points > 0) {
+            rewardPlus += inc.points;
+          } else if (inc.source === 'TRỰC CỜ ĐỎ') {
+            coDoMinus += Math.abs(inc.points);
+          } else {
+            sdbMinus += Math.abs(inc.points);
+          }
         });
 
-        // Lấy điểm trừ vắng chuẩn từ Google Sheets
+        // Lấy điểm trừ vắng chuẩn trực tiếp từ Google Sheets (sheet CHUYEN_CAN_35W)
         const abData = getClassAbsentData(cls.name);
         const vangMinus = abData.totalMinus || 0;
 
