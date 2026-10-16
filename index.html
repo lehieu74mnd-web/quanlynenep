@@ -1,465 +1,181 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cổng Tra Cứu Nề Nếp & Thi Đua - THPT Thu Xà</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="style_edtech.css">
-</head>
-<body class="min-h-screen flex flex-col antialiased bg-slate-50">
-  <!-- Header -->
-  <header class="bg-blue-900 text-white shadow-md sticky top-0 z-50 no-print">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
-      <div class="flex items-center gap-3">
-        <div class="bg-blue-800 p-2 rounded-xl shadow-inner border border-blue-700">
-          <i class="fa-solid fa-graduation-cap text-2xl text-amber-400"></i>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-base md:text-lg font-bold uppercase tracking-wide">Trường THPT Thu Xà</h1>
-            <span class="text-[11px] bg-blue-800 text-amber-300 font-semibold px-2 py-0.5 rounded border border-blue-700">Cổng Tra Cứu</span>
-          </div>
-          <p class="text-xs text-blue-200">Theo dõi điểm thi đua & nề nếp học sinh năm học 2026-2027</p>
-        </div>
-      </div>
-      
-      <div class="flex items-center gap-2">
-        <div class="flex items-center gap-1.5 bg-blue-950/70 px-3 py-1.5 rounded-lg border border-blue-800">
-          <label class="text-xs font-bold text-amber-300">TUẦN:</label>
-          <select id="select-week" onchange="changeWeek(this.value)" class="text-xs bg-blue-900 text-white font-bold px-2 py-0.5 rounded border border-blue-700 focus:outline-none focus:ring-1 focus:ring-amber-400">
-            <!-- 35 tuần -->
-          </select>
-        </div>
+/**
+ * GOOGLE APPS SCRIPT - ĐỒNG BỘ DỮ LIỆU CHUẨN XÁC TUYỆT ĐỐI
+ */
 
-        <button onclick="fetchFromGoogleSheets(true)" class="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 font-medium shadow-sm">
-          <i class="fa-solid fa-arrows-rotate" id="sync-spin"></i> Cập Nhật
-        </button>
-
-        <button onclick="window.print()" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 font-medium shadow-sm">
-          <i class="fa-solid fa-print"></i> In Kết Quả
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <!-- Navigation Tabs -->
-  <nav class="bg-white border-b border-slate-200 shadow-sm no-print sticky top-[61px] z-40">
-    <div class="max-w-7xl mx-auto px-4 flex space-x-2">
-      <button onclick="switchTab('tab-overview')" id="btn-tab-overview" class="tab-btn px-5 py-3 font-semibold text-xs md:text-sm border-b-2 border-blue-900 text-blue-900 flex items-center gap-2 transition">
-        <i class="fa-solid fa-trophy text-amber-500 text-base"></i> Bảng Vàng & Tổng Quan Thi Đua
-      </button>
-      <button onclick="switchTab('tab-class-detail')" id="btn-tab-class-detail" class="tab-btn px-5 py-3 font-medium text-xs md:text-sm text-slate-500 hover:text-blue-900 border-b-2 border-transparent flex items-center gap-2 transition">
-        <i class="fa-solid fa-id-card-clip text-blue-600 text-base"></i> 2. Hồ Sơ Nề Nếp Từng Lớp
-      </button>
-    </div>
-  </nav>
-
-  <!-- Main Content -->
-  <main class="max-w-7xl mx-auto p-4 md:p-6 space-y-6 flex-1 w-full">
-
-    <!-- TAB 1: TỔNG QUAN -->
-    <section id="tab-overview" class="tab-pane space-y-6">
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 no-print">
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
-          <div>
-            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Quy mô trường</p>
-            <p class="text-2xl font-extrabold text-blue-900 mt-1">30 LỚP</p>
-            <p class="text-xs text-slate-500 mt-0.5 font-medium">11 K10 • 7 K11 • 12 K12</p>
-          </div>
-          <div class="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700 text-xl"><i class="fa-solid fa-school"></i></div>
-        </div>
-
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
-          <div>
-            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Lượt vi phạm tuần</p>
-            <p class="text-2xl font-extrabold text-rose-600 mt-1" id="stat-total-incidents">0 LƯỢT</p>
-            <p class="text-xs text-rose-500 mt-0.5 font-medium">Được ghi nhận công khai</p>
-          </div>
-          <div class="w-12 h-12 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 text-xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        </div>
-
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
-          <div>
-            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Chuyên cần vắng</p>
-            <p class="text-2xl font-extrabold text-amber-600 mt-1" id="stat-total-absent">0 BUỔI</p>
-            <p class="text-xs text-amber-600 mt-0.5 font-medium">Có phép & Không phép</p>
-          </div>
-          <div class="w-12 h-12 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 text-xl"><i class="fa-solid fa-user-clock"></i></div>
-        </div>
-
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
-          <div>
-            <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Điểm TB toàn trường</p>
-            <p class="text-2xl font-extrabold text-emerald-600 mt-1" id="stat-avg-score">10 / 10</p>
-            <p class="text-xs text-emerald-600 mt-0.5 font-medium">Đánh giá chung: Nề nếp Tốt</p>
-          </div>
-          <div class="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 text-xl"><i class="fa-solid fa-chart-line"></i></div>
-        </div>
-      </div>
-
-      <!-- Bảng xếp hạng toàn trường -->
-      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-slate-100">
-          <div>
-            <h2 class="text-base md:text-lg font-bold text-blue-950 flex items-center gap-2">
-              <i class="fa-solid fa-medal text-amber-500"></i> BẢNG XẾP HẠNG THI ĐUA NỀ NẾP <span id="label-current-week-title" class="text-blue-600">TUẦN 1</span>
-            </h2>
-            <p class="text-xs text-slate-500 mt-0.5">Điểm chuẩn: 320 điểm | Đồng bộ chuẩn xác 100% từ Google Sheets</p>
-          </div>
-          <div class="flex items-center gap-2 no-print">
-            <span class="text-xs font-semibold text-slate-600">Lọc khối lớp:</span>
-            <select id="filter-khoi" onchange="renderRankingTable()" class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-slate-50 font-medium focus:ring-2 focus:ring-blue-600 focus:outline-none">
-              <option value="ALL">Toàn Trường (30 lớp)</option>
-              <option value="10">Khối 10 (11 lớp)</option>
-              <option value="11">Khối 11 (7 lớp)</option>
-              <option value="12">Khối 12 (12 lớp)</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="overflow-x-auto mt-4">
-          <table class="w-full text-left text-xs md:text-sm border-collapse">
-            <thead>
-              <tr class="border-b border-slate-200 bg-slate-50">
-                <th class="py-3 px-3 text-center w-12">Hạng</th>
-                <th class="py-3 px-3 text-center w-14">Khối</th>
-                <th class="py-3 px-4 text-left">Chi Đoàn / Lớp</th>
-                <th class="py-3 px-2 text-center">Trừ SĐB</th>
-                <th class="py-3 px-2 text-center">Trừ Vắng</th>
-                <th class="py-3 px-2 text-center">Trừ Cờ Đỏ</th>
-                <th class="py-3 px-2 text-center">Cộng Thưởng</th>
-                <th class="py-3 px-3 text-center font-bold bg-blue-900 text-amber-300">Tổng Điểm</th>
-                <th class="py-3 px-3 text-center font-bold text-emerald-700">Điểm TB</th>
-                <th class="py-3 px-3 text-center w-24">Vị Thứ</th>
-              </tr>
-            </thead>
-            <tbody id="ranking-tbody" class="divide-y divide-slate-100">
-              <tr><td colspan="10" class="text-center py-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin text-blue-600 text-xl mr-2"></i> Đang tải dữ liệu thi đua...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 2: HỒ SƠ NỀ NẾP TỪNG LỚP -->
-    <section id="tab-class-detail" class="tab-pane hidden space-y-6">
-      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-slate-100">
-          <div>
-            <h2 class="text-base md:text-lg font-bold text-blue-950 flex items-center gap-2">
-              <i class="fa-solid fa-magnifying-glass-chart text-blue-600"></i> TRA CỨU HỒ SƠ NỀ NẾP RIÊNG TỪNG LỚP
-            </h2>
-            <p class="text-xs text-slate-500 mt-0.5">Xem chi tiết các lỗi vi phạm và điểm số tổng hợp của lớp</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <label class="text-xs font-bold text-slate-700">Chọn Lớp Cần Tra Cứu:</label>
-            <select id="select-class-lookup" onchange="renderClassDetailView(this.value)" class="text-xs border-2 border-blue-700 font-bold text-blue-950 rounded-xl px-3 py-1.5 bg-blue-50 focus:outline-none">
-              <!-- Render 30 lớp -->
-            </select>
-          </div>
-        </div>
-
-        <!-- Thống kê nhanh -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 my-5" id="class-summary-cards">
-          <!-- Render by JS -->
-        </div>
-
-        <!-- Chi tiết vi phạm -->
-        <div class="space-y-3">
-          <h3 class="text-xs md:text-sm font-bold text-blue-950 flex items-center gap-2">
-            <i class="fa-solid fa-list-check text-rose-500"></i> CHI TIẾT CÁC SỰ VIỆC GHI NHẬN TRONG <span id="label-current-week-sub">TUẦN 1</span>
-          </h3>
-          <div class="overflow-x-auto border rounded-xl">
-            <table class="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr class="bg-slate-50">
-                  <th class="py-2.5 px-3">Ngày Vi Phạm</th>
-                  <th class="py-2.5 px-3">Thứ - Buổi</th>
-                  <th class="py-2.5 px-3">Học Sinh Vi Phạm</th>
-                  <th class="py-2.5 px-3">Nội Dung Vi Phạm</th>
-                  <th class="py-2.5 px-3">Nguồn Ghi</th>
-                  <th class="py-2.5 px-3 text-center">Điểm Trừ/Cộng</th>
-                  <th class="py-2.5 px-3">Ghi Chú Minh Chứng</th>
-                </tr>
-              </thead>
-              <tbody id="class-incidents-tbody" class="divide-y divide-slate-100">
-                <!-- Render chi tiết lỗi -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <script>
-    const CLASSES = [
-      { name: '10A1', khoi: '10', ss: 44 }, { name: '10A2', khoi: '10', ss: 43 },
-      { name: '10A3', khoi: '10', ss: 44 }, { name: '10A4', khoi: '10', ss: 43 },
-      { name: '10A5', khoi: '10', ss: 44 }, { name: '10A6', khoi: '10', ss: 43 },
-      { name: '10A7', khoi: '10', ss: 44 }, { name: '10A8', khoi: '10', ss: 43 },
-      { name: '10A9', khoi: '10', ss: 44 }, { name: '10A10', khoi: '10', ss: 44 },
-      { name: '10A11', khoi: '10', ss: 43 },
-      { name: '11B1', khoi: '11', ss: 42 }, { name: '11B2', khoi: '11', ss: 43 },
-      { name: '11B3', khoi: '11', ss: 44 }, { name: '11B4', khoi: '11', ss: 42 },
-      { name: '11B5', khoi: '11', ss: 43 }, { name: '11B6', khoi: '11', ss: 42 },
-      { name: '11B7', khoi: '11', ss: 43 },
-      { name: '12C1', khoi: '12', ss: 42 }, { name: '12C2', khoi: '12', ss: 42 },
-      { name: '12C3', khoi: '12', ss: 44 }, { name: '12C4', khoi: '12', ss: 43 },
-      { name: '12C5', khoi: '12', ss: 44 }, { name: '12C6', khoi: '12', ss: 44 },
-      { name: '12C7', khoi: '12', ss: 40 }, { name: '12C8', khoi: '12', ss: 38 },
-      { name: '12C9', khoi: '12', ss: 42 }, { name: '12C10', khoi: '12', ss: 41 },
-      { name: '12C11', khoi: '12', ss: 42 }, { name: '12C12', khoi: '12', ss: 41 }
-    ];
-
-    let currentWeek = 1;
-    let API_URL = "https://script.google.com/macros/s/AKfycbxXfQJScsrKMDT59C35ZKHRUMYAHD4nXKiYMwhEdA6bEah_8tpqphqlxtSneZ6caSaNWw/exec";
-
-    let incidents = [];
-    let scoresMapData = {};
-
-    function formatDateVN(dateVal) {
-      if (!dateVal) return '-';
-      const str = dateVal.toString().trim();
-      if (/^\d{1,2}\/\d{1,2}\/\d{4}\$/.test(str)) return str;
-      const d = new Date(str);
-      if (isNaN(d.getTime())) return str;
-      const day = String(d.getDate()).padStart(2, '0');
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const year = d.getFullYear();
-      return `${day}/${month}/${year}`;
-    }
-
-    function initWeekDropdown() {
-      const sel = document.getElementById('select-week');
-      if (!sel) return;
-      let html = '';
-      for (let w = 1; w <= 35; w++) {
-        html += `<option value="${w}">Tuần ${w} (${w <= 18 ? 'HK1' : 'HK2'})</option>`;
-      }
-      sel.innerHTML = html;
-      sel.value = currentWeek;
-
-      const selClass = document.getElementById('select-class-lookup');
-      if (selClass) {
-        selClass.innerHTML = CLASSES.map(c => `<option value="${c.name}">Lớp ${c.name} (Khối ${c.khoi})</option>`).join('');
-      }
-    }
-
-    function changeWeek(val) {
-      currentWeek = Number(val);
-      document.getElementById('label-current-week-title').innerText = "TUẦN " + currentWeek;
-      document.getElementById('label-current-week-sub').innerText = "TUẦN " + currentWeek;
-      fetchFromGoogleSheets(true);
-    }
-
-    async function fetchFromGoogleSheets(forceRefresh = false) {
-      const cacheKey = `thutha_week_${currentWeek}`;
-      if (!forceRefresh) {
-        const cachedData = sessionStorage.getItem(cacheKey);
-        if (cachedData) {
-          try {
-            const parsed = JSON.parse(cachedData);
-            incidents = parsed.incidents;
-            scoresMapData = parsed.scoresMapData;
-            refreshAllViews();
-            return;
-          } catch(e) {}
-        }
-      }
-
-      const spin = document.getElementById('sync-spin');
-      if (spin) spin.classList.add('fa-spin');
-
-      const tbody = document.getElementById('ranking-tbody');
-      if (tbody && forceRefresh) {
-        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-blue-600 font-medium"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang đồng bộ dữ liệu chuẩn từ Google Sheets...</td></tr>`;
-      }
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 25000);
-
+function doGet(e) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const selectedWeek = (e && e.parameter && e.parameter.week) ? Number(e.parameter.week) : 1;
+    
+    let sheetDash = ss.getSheetByName("DASHBOARD_TUAN") || ss.getSheetByName("TONG_KET_35_TUAN");
+    const scoresMap = {};
+    
+    if (sheetDash) {
+      // 1. Tự động ghi số tuần vào ô I2 của sheet Dashboard để kích hoạt công thức tính lại
       try {
-        const res = await fetch(`${API_URL}?week=${currentWeek}`, { signal: controller.signal });
-        clearTimeout(timeoutId);
-        const data = await res.json();
+        sheetDash.getRange("I2").setValue(selectedWeek);
+        SpreadsheetApp.flush();
+      } catch (err) {}
 
-        if (data.status === 'success') {
-          scoresMapData = data.scoresMap || {};
-          const rawIncidents = data.incidents || [];
+      // 2. Quét dữ liệu từ dòng 6 đến hết danh sách 30 lớp
+      const lastRow = sheetDash.getLastRow();
+      if (lastRow >= 6) {
+        const dataDash = sheetDash.getRange(6, 1, lastRow - 5, 12).getValues();
+        
+        for (let r = 0; r < dataDash.length; r++) {
+          const row = dataDash[r];
+          const lop = row[2] ? row[2].toString().trim() : ""; // Cột C (index 2): Tên Lớp
           
-          const seen = new Set();
-          incidents = rawIncidents.filter(i => {
-            const uniqueKey = `${i.date}_${i.lop}_${i.category}_${i.points}`;
-            if (seen.has(uniqueKey)) return false;
-            seen.add(uniqueKey);
-            return true;
+          if (lop && (lop.startsWith("10") || lop.startsWith("11") || lop.startsWith("12"))) {
+            scoresMap[lop] = {
+              coDoMinus: Math.abs(Number(row[4]) || 0),   // Cột E (index 4): Trừ cờ đỏ
+              sdbMinus: Math.abs(Number(row[5]) || 0),    // Cột F (index 5): Trừ SĐB
+              vangMinus: Math.abs(Number(row[6]) || 0),   // Cột G (index 6): Trừ vắng
+              rewardPlus: Math.abs(Number(row[7]) || 0),  // Cột H (index 7): Điểm thưởng
+              totalScore: Number(row[8]) || 320,          // Cột I (index 8): Tổng điểm
+              avgScore: Number(row[9]) || 10,             // Cột J (index 9): Điểm TB
+              rankInKhoi: Number(row[10]) || 1            // Cột K (index 10): Hạng khối
+            };
+          }
+        }
+      }
+    }
+
+    // 3. Đọc dữ liệu chi tiết sự việc từ NHAT_KY_VI_PHAM cho Tab 2
+    let sheetNK = ss.getSheetByName("NHAT_KY_VI_PHAM");
+    const incidents = [];
+    if (sheetNK && sheetNK.getLastRow() > 1) {
+      const dataNK = sheetNK.getDataRange().getValues();
+      for (let r = 1; r < dataNK.length; r++) {
+        const row = dataNK[r];
+        const w = Number(row[1]);
+        const targetW = isNaN(w) || w === 0 ? 1 : w;
+        if (targetW === selectedWeek && (row[0] || row[5])) {
+          const rawMinus = Number(row[9]) || 0;
+          const rawPlus = Number(row[10]) || 0;
+          let finalPoints = rawPlus > 0 ? Math.abs(rawPlus) : (rawMinus !== 0 ? -Math.abs(rawMinus) : 0);
+          
+          let dateStr = "";
+          const rawDate = row[2];
+          if (rawDate) {
+            if (rawDate instanceof Date) {
+              dateStr = Utilities.formatDate(rawDate, "GMT+7", "dd/MM/yyyy");
+            } else {
+              const parsed = new Date(rawDate);
+              dateStr = !isNaN(parsed.getTime()) ? Utilities.formatDate(parsed, "GMT+7", "dd/MM/yyyy") : rawDate.toString();
+            }
+          }
+          
+          incidents.push({
+            id: row[0],
+            week: targetW,
+            date: dateStr,
+            day: row[3] || "",
+            session: row[4] || "",
+            lop: row[5] ? row[5].toString().trim() : "",
+            student: row[6] || "",
+            source: row[7] || "",
+            category: row[8] || "",
+            points: finalPoints,
+            note: row[11] || ""
           });
-
-          sessionStorage.setItem(cacheKey, JSON.stringify({ incidents, scoresMapData }));
-          refreshAllViews();
-        } else {
-          throw new Error(data.message || "Lỗi dữ liệu từ Server");
         }
-      } catch (err) {
-        console.error("Lỗi kết nối API:", err);
-        if (tbody) {
-          tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-rose-500 font-medium"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Không thể kết nối. Vui lòng bấm nút "Cập Nhật".</td></tr>`;
+      }
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "success",
+      week: selectedWeek,
+      scoresMap: scoresMap,
+      incidents: incidents
+    })).setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "error",
+      message: error.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doPost(e) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let postData = {};
+    try {
+      postData = JSON.parse(e.postData.contents);
+    } catch (err) {
+      postData = {};
+    }
+
+    const action = postData.action || "";
+
+    if (action === "updateAttendance" || action === "saveAttendance" || action === "addAttendance" || postData.attendance || postData.data || postData.absents) {
+      let sheetCC = ss.getSheetByName("CHUYEN_CAN_35W") || ss.getSheetByName("CHUYEN_CAN_32W");
+      if (!sheetCC) {
+        sheetCC = ss.insertSheet("CHUYEN_CAN_35W");
+        sheetCC.appendRow(["STT", "KHÔI", "LỚP"]);
+      }
+
+      const week = Number(postData.week) || 1;
+      const targetCol = week + 3; 
+      const attendanceData = postData.attendance || postData.data || postData.absents || postData;
+      const dataCC = sheetCC.getDataRange().getValues();
+
+      for (let r = 5; r < dataCC.length; r++) {
+        const lop = dataCC[r][2] ? dataCC[r][2].toString().trim() : "";
+        if (lop && attendanceData[lop] !== undefined) {
+          const item = attendanceData[lop];
+          let totalMinus = 0;
+          if (typeof item === 'object' && item !== null) {
+            const p = Number(item.p) || Number(item.coPhép) || 0;
+            const kp = Number(item.kp) || Number(item.khongPhép) || 0;
+            totalMinus = (p * 1) + (kp * 10);
+          } else {
+            totalMinus = Number(item) || 0;
+          }
+          sheetCC.getRange(r + 1, targetCol).setValue(totalMinus);
         }
-      } finally {
-        if (spin) spin.classList.remove('fa-spin');
-      }
-    }
-
-    function getCalculatedScoresWithRanks() {
-      const BASE_POINTS = 320;
-      let scores = CLASSES.map(cls => {
-        const sheetData = scoresMapData[cls.name] || {
-          coDoMinus: 0, sdbMinus: 0, vangMinus: 0, rewardPlus: 0,
-          totalScore: BASE_POINTS, avgScore: 10, rankInKhoi: 1
-        };
-
-        return {
-          ...cls,
-          sdbMinus: sheetData.sdbMinus,
-          coDoMinus: sheetData.coDoMinus,
-          vangMinus: sheetData.vangMinus,
-          rewardPlus: sheetData.rewardPlus,
-          totalScore: sheetData.totalScore,
-          avgScore: sheetData.avgScore,
-          rankInKhoi: sheetData.rankInKhoi
-        };
-      });
-
-      return scores;
-    }
-
-    function renderRankingTable() {
-      const selectedKhoi = document.getElementById('filter-khoi').value;
-      let scores = getCalculatedScoresWithRanks();
-
-      let displayClasses = scores;
-      if (selectedKhoi !== 'ALL') {
-        displayClasses = scores.filter(c => c.khoi === selectedKhoi);
-        displayClasses.sort((a, b) => a.rankInKhoi - b.rankInKhoi);
-      } else {
-        displayClasses.sort((a, b) => a.khoi.localeCompare(b.khoi) || a.rankInKhoi - b.rankInKhoi);
       }
 
-      let totalIncidentsCount = incidents.filter(i => Number(i.week) === currentWeek).length;
-      let totalVangMinusSum = scores.reduce((sum, c) => sum + c.vangMinus, 0);
-      let schoolAvgScore = scores.length > 0 ? (scores.reduce((sum, c) => sum + c.avgScore, 0) / scores.length).toFixed(2) : "10";
+      return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Đã cập nhật điểm chuyên cần thành công!" })).setMimeType(ContentService.MimeType.JSON);
+    }
 
-      document.getElementById('stat-total-incidents').innerText = totalIncidentsCount + " LƯỢT";
-      document.getElementById('stat-total-absent').innerText = totalVangMinusSum + " ĐIỂM";
-      document.getElementById('stat-avg-score').innerText = schoolAvgScore + " / 10";
-
-      const tbody = document.getElementById('ranking-tbody');
-      if (displayClasses.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-slate-400 italic">Chưa có dữ liệu thi đua trong tuần này.</td></tr>`;
-        return;
+    if (action === "deleteIncident") {
+      let sheetNK = ss.getSheetByName("NHAT_KY_VI_PHAM");
+      if (sheetNK && sheetNK.getLastRow() > 1) {
+        const targetId = String(postData.id || "").trim();
+        const dataNK = sheetNK.getDataRange().getValues();
+        for (let r = dataNK.length - 1; r >= 1; r--) {
+          const rowId = dataNK[r][0] !== undefined && dataNK[r][0] !== null ? dataNK[r][0].toString().trim() : "";
+          if (rowId === targetId || (targetId !== "" && rowId.includes(targetId))) {
+            sheetNK.deleteRow(r + 1);
+            break;
+          }
+        }
       }
-
-      tbody.innerHTML = displayClasses.map((item, index) => {
-        let badgeClass = item.rankInKhoi === 1 ? 'bg-amber-100 text-amber-800 border border-amber-300' : 
-                         (item.rankInKhoi === 2 ? 'bg-slate-200 text-slate-800 border border-slate-300' : 
-                         (item.rankInKhoi === 3 ? 'bg-amber-700/20 text-amber-900 border border-amber-600/30' : 'bg-slate-100 text-slate-600'));
-        return `
-          <tr class="hover:bg-blue-50/40 transition border-b border-slate-100 text-center">
-            <td class="py-2.5 px-3 font-semibold text-slate-500">${index + 1}</td>
-            <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[11px] bg-slate-100 font-bold text-slate-600">${item.khoi}</span></td>
-            <td class="py-2.5 px-4 font-bold text-blue-950 text-left cursor-pointer hover:underline text-blue-700" onclick="lookupClassDirectly('${item.name}')">${item.name}</td>
-            <td class="py-2.5 px-2 font-bold ${item.sdbMinus > 0 ? 'text-rose-600' : 'text-slate-400'}">${item.sdbMinus > 0 ? '-' + item.sdbMinus : '-'}</td>
-            <td class="py-2.5 px-2 font-bold ${item.vangMinus > 0 ? 'text-amber-600' : 'text-slate-400'}">${item.vangMinus > 0 ? '-' + item.vangMinus : '-'}</td>
-            <td class="py-2.5 px-2 font-bold ${item.coDoMinus > 0 ? 'text-red-500' : 'text-slate-400'}">${item.coDoMinus > 0 ? '-' + item.coDoMinus : '-'}</td>
-            <td class="py-2.5 px-2 font-bold ${item.rewardPlus > 0 ? 'text-emerald-600' : 'text-slate-400'}">${item.rewardPlus > 0 ? '+' + item.rewardPlus : '-'}</td>
-            <td class="py-2.5 px-3 font-extrabold text-blue-950 bg-blue-50/40">${item.totalScore}</td>
-            <td class="py-2.5 px-3 font-extrabold text-emerald-700">${item.avgScore.toFixed(2)}</td>
-            <td class="py-2.5 px-3"><span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${badgeClass}">Hạng ${item.rankInKhoi}</span></td>
-          </tr>
-        `;
-      }).join('');
+      return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    function renderClassDetailView(className) {
-      const scores = getCalculatedScoresWithRanks();
-      const clsData = scores.find(c => c.name.trim().toUpperCase() === className.trim().toUpperCase()) || scores[0];
-
-      document.getElementById('class-summary-cards').innerHTML = `
-        <div class="p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl">
-          <p class="text-[10px] uppercase font-bold text-blue-800">Chi Đoàn / Lớp</p>
-          <p class="text-xl font-black text-blue-950 mt-0.5">${clsData.name}</p>
-          <p class="text-[11px] text-slate-500">Sĩ số: ${clsData.ss} học sinh (Khối ${clsData.khoi})</p>
-        </div>
-        <div class="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-xl">
-          <p class="text-[10px] uppercase font-bold text-emerald-800">Điểm Thi Đua Tuần ${currentWeek}</p>
-          <p class="text-xl font-black text-emerald-700 mt-0.5">${clsData.totalScore} đ (${clsData.avgScore.toFixed(2)})</p>
-          <p class="text-[11px] text-emerald-600 font-semibold">Xếp hạng: Hạng ${clsData.rankInKhoi} Khối</p>
-        </div>
-        <div class="p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl">
-          <p class="text-[10px] uppercase font-bold text-amber-800">Điểm Trừ Vắng</p>
-          <p class="text-xl font-black text-amber-700 mt-0.5">-${clsData.vangMinus} đ</p>
-          <p class="text-[11px] text-amber-600 font-medium">Chuyên cần tuần này</p>
-        </div>
-        <div class="p-3.5 bg-rose-50/70 border border-rose-200 rounded-xl">
-          <p class="text-[10px] uppercase font-bold text-rose-800">Tổng Điểm Bị Trừ</p>
-          <p class="text-xl font-black text-rose-700 mt-0.5">-${clsData.sdbMinus + clsData.coDoMinus + clsData.vangMinus} đ</p>
-          <p class="text-[11px] text-rose-600 font-medium">SĐB: -${clsData.sdbMinus} | Cờ đỏ: -${clsData.coDoMinus} | Vắng: -${clsData.vangMinus}</p>
-        </div>
-      `;
-
-      const classIncidents = incidents.filter(i => i.lop && i.lop.trim().toUpperCase() === className.trim().toUpperCase() && Number(i.week) === currentWeek);
-      const tbodyInc = document.getElementById('class-incidents-tbody');
-      if (classIncidents.length === 0) {
-        tbodyInc.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 italic">Lớp thực hiện nề nếp rất tốt trong tuần này, không có vi phạm nào.</td></tr>`;
-      } else {
-        tbodyInc.innerHTML = classIncidents.map(i => `
-          <tr class="hover:bg-slate-50 border-b">
-            <td class="py-2.5 px-3 font-semibold text-blue-900">${formatDateVN(i.date)}</td>
-            <td class="py-2.5 px-3 text-slate-600">${i.day || ''} - ${i.session || ''}</td>
-            <td class="py-2.5 px-3 font-bold text-slate-800">${i.student || 'Tập thể'}</td>
-            <td class="py-2.5 px-3 text-slate-700">${i.category}</td>
-            <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 font-semibold">${i.source}</span></td>
-            <td class="py-2.5 px-3 text-center font-bold ${i.points > 0 ? 'text-emerald-600' : 'text-rose-600'}">${i.points > 0 ? '+' + i.points : i.points} đ</td>
-            <td class="py-2.5 px-3 text-slate-500">${i.note || ''}</td>
-          </tr>
-        `).join('');
+    if (action === "addIncident") {
+      let sheetNK = ss.getSheetByName("NHAT_KY_VI_PHAM");
+      if (!sheetNK) {
+        sheetNK = ss.insertSheet("NHAT_KY_VI_PHAM");
+        sheetNK.appendRow(["ID", "TUẦN", "NGÀY", "THỨ", "BUỔI", "LỚP", "HỌC SINH", "NGUỒN", "NỘI QUY", "TRỪ", "CỘNG", "GHI CHÚ"]);
       }
+      const inc = postData.incident || {};
+      const targetWeek = Number(postData.week) || Number(inc.week) || 1;
+      const pts = Number(postData.incident.points) || Number(inc.points) || 0;
+      const minus = pts < 0 ? Math.abs(pts) : 0;
+      const plus = pts > 0 ? Math.abs(pts) : 0;
+
+      sheetNK.appendRow([inc.id || Date.now(), targetWeek, inc.date || "", inc.day || "", inc.session || "", inc.lop || "", inc.student || "", inc.source || "", inc.category || "", minus, plus, inc.note || ""]);
+      return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    function lookupClassDirectly(className) {
-      document.getElementById('select-class-lookup').value = className;
-      switchTab('tab-class-detail');
-      renderClassDetailView(className);
-    }
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Không rõ hành động" })).setMimeType(ContentService.MimeType.JSON);
 
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('border-blue-900', 'text-blue-900', 'font-semibold');
-        btn.classList.add('border-transparent', 'text-slate-500', 'font-medium');
-      });
-      document.getElementById(tabId).classList.remove('hidden');
-      document.getElementById('btn-' + tabId)?.classList.add('border-blue-900', 'text-blue-900', 'font-semibold');
-
-      if (tabId === 'tab-class-detail') {
-        const curLop = document.getElementById('select-class-lookup').value || '10A1';
-        renderClassDetailView(curLop);
-      }
-    }
-
-    function refreshAllViews() {
-      renderRankingTable();
-      const curLop = document.getElementById('select-class-lookup').value || '10A1';
-      renderClassDetailView(curLop);
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      initWeekDropdown();
-      fetchFromGoogleSheets();
-    });
-  </script>
-</body>
-</html>
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: error.toString() })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
