@@ -375,22 +375,20 @@
       // Lọc các sự việc của lớp trong tuần hiện tại
       const classIncidents = incidents.filter(i => i.lop && i.lop.trim().toUpperCase() === className.trim().toUpperCase() && Number(i.week) === currentWeek);
 
-      // Tự động tính số buổi vắng từ danh sách vi phạm chuyên cần
+      // Đếm chuẩn xác số buổi vắng dựa trên Nội Dung Vi Phạm (category) và Ghi Chú (note)
       let totalVangBuoi = 0;
       let vangCoPhep = 0;
       let vangKhongPhep = 0;
 
       classIncidents.forEach(i => {
-        const cat = (i.category || "").toLowerCase();
-        const note = (i.note || "").toLowerCase();
-        if (cat.includes("vắng") || note.includes("vắng")) {
-          // Trích xuất số lượng học sinh hoặc số buổi vắng nếu có trong nội dung
-          if (cat.includes("không phép")) {
+        const textCheck = ((i.category || "") + " " + (i.note || "")).toLowerCase();
+        if (textCheck.includes("vắng")) {
+          totalVangBuoi += 1;
+          if (textCheck.includes("không phép") || textCheck.includes("kp")) {
             vangKhongPhep += 1;
           } else {
             vangCoPhep += 1;
           }
-          totalVangBuoi += 1;
         }
       });
 
@@ -407,7 +405,7 @@
         </div>
         <div class="p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl">
           <p class="text-[10px] uppercase font-bold text-amber-800">Chuyên Cần Tuần Này</p>
-          <p class="text-xl font-black text-amber-700 mt-0.5">${totalVangBuoi} lượt vắng</p>
+          <p class="text-xl font-black text-amber-700 mt-0.5">${totalVangBuoi} buổi vắng</p>
           <p class="text-[11px] text-amber-600 font-semibold">${vangCoPhep} có phép • ${vangKhongPhep} không phép</p>
         </div>
         <div class="p-3.5 bg-rose-50/70 border border-rose-200 rounded-xl">
