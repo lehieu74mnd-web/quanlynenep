@@ -256,17 +256,34 @@
     }
 
     // Tối ưu tốc độ với thời gian chờ 30 giây chống Cold Start
+ // Tải dữ liệu siêu tốc tích hợp Bộ nhớ đệm (Session Cache)
     async function fetchFromGoogleSheets(forceRefresh = false) {
+      const cacheKey = `thutha_week_${currentWeek}`;
+      
+      // Nếu không bắt buộc làm mới và có sẵn cache, load ngay lập tức
+      if (!forceRefresh) {
+        const cachedData = sessionStorage.getItem(cacheKey);
+        if (cachedData) {
+          try {
+            const parsed = JSON.parse(cachedData);
+            incidents = parsed.incidents;
+            absents = parsed.absents;
+            refreshAllViews();
+            return;
+          } catch(e) {}
+        }
+      }
+
       const spin = document.getElementById('sync-spin');
       if (spin) spin.classList.add('fa-spin');
 
       const tbody = document.getElementById('ranking-tbody');
-      if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-blue-600 font-medium"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang kết nối máy chủ Google Sheets...</td></tr>`;
+      if (tbody && forceRefresh) {
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-blue-600 font-medium"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang đồng bộ dữ liệu mới từ Google Sheets...</td></tr>`;
       }
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 giây
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
 
       try {
         const res = await fetch(`${API_URL}?week=${currentWeek}`, { signal: controller.signal });
@@ -285,6 +302,8 @@
             return true;
           });
 
+          // Lưu vào sessionStorage để lần sau mở lên xem là có ngay
+          sessionStorage.setItem(cacheKey, JSON.stringify({ incidents, absents }));
           refreshAllViews();
         } else {
           throw new Error(data.message || "Lỗi dữ liệu từ Server");
@@ -292,7 +311,7 @@
       } catch (err) {
         console.error("Lỗi kết nối API:", err);
         if (tbody) {
-          tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-rose-500 font-medium"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Không thể kết nối. Vui lòng kiểm tra lại quyền Deploy "Anyone" của Web App.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-rose-500 font-medium"><i class="fa-solid fa-triangle-exclamation mr-2"></i> Không thể kết nối. Vui lòng bấm nút "Cập Nhật".</td></tr>`;
         }
       } finally {
         if (spin) spin.classList.remove('fa-spin');
