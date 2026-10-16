@@ -382,7 +382,6 @@
         `;
       }).join('');
     }
-
     function renderClassDetailView(className) {
       const scores = getCalculatedScoresWithRanks();
       const clsData = scores.find(c => c.name.trim().toUpperCase() === className.trim().toUpperCase()) || scores[0];
