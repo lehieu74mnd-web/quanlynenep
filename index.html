@@ -368,10 +368,11 @@
           totalScore: total,
           avgScore: avg,
           //rankInKhoi: Math.round(Number(sheetData.rankInKhoi) || 1)
-          rankInKhoi: parseInt(sheetData.rankInKhoi || 1, 10)
+         // rankInKhoi: parseInt(sheetData.rankInKhoi || 1, 10)
+           rankInKhoi: 1
         };
       });
-          // TÍNH VÀ ĐÈ LẠI THỨ HẠNG THEO TỔNG ĐIỂM DỰA TRÊN DỮ LIỆU THỰC TẾ
+         // TÍNH TOÁN VÀ ĐÈ LẠI XẾP HẠNG TRONG TỪNG KHỐI (10, 11, 12)
       ['10', '11', '12'].forEach(kh => {
         const khoiClasses = scores.filter(c => c.khoi === kh);
         khoiClasses.sort((a, b) => b.totalScore - a.totalScore);
@@ -383,6 +384,8 @@
           }
         });
       });
+
+     
 
      // return scores; // Trả về kết quả SAU KHI ĐÃ TÍNH LẠI XẾP HẠNG
       return scores;
