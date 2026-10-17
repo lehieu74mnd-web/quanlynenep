@@ -415,6 +415,11 @@
             <td class="py-2.5 px-2 font-bold ${item.rewardPlus > 0 ? 'text-emerald-600' : 'text-slate-400'}">${item.rewardPlus > 0 ?  + item.rewardPlus : '-'}</td>
             <td class="py-2.5 px-3 font-extrabold text-blue-950 bg-blue-50/40">${item.totalScore}</td>
             <td class="py-2.5 px-3 font-extrabold text-emerald-700">${ Number(item.avgScore).toFixed(2)}</td>
+            <td class="py-2.5 px-3 font-bold text-blue-900">
+            <span class="px-2.5 py-1 rounded-full text-xs font-bold ${badgeClass}">
+            ${parseInt(item.rankInKhoi, 10)}
+            </span>
+            </td>
         </tr>   
         `;
       }).join('');
