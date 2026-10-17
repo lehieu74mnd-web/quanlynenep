@@ -157,7 +157,7 @@
           <table class="w-full text-left text-xs md:text-sm border-collapse">
             <thead>
               <tr class="border-b border-slate-200 bg-slate-50">
-                <th class="py-3 px-3 text-center w-12">Hạng</th>
+                <th class="py-3 px-3 text-center w-12">STT</th>
                 <th class="py-3 px-3 text-center w-14">Khối</th>
                 <th class="py-3 px-4 text-left">Chi Đoàn / Lớp</th>
                 <th class="py-3 px-2 text-center">Trừ SĐB</th>
@@ -367,10 +367,24 @@
           rewardPlus: reward,
           totalScore: total,
           avgScore: avg,
-          rankInKhoi: Math.round(Number(sheetData.rankInKhoi) || 1)
+          //rankInKhoi: Math.round(Number(sheetData.rankInKhoi) || 1)
+          rankInKhoi: parseInt(sheetData.rankInKhoi || 1, 10)
         };
       });
+          // TÍNH VÀ ĐÈ LẠI THỨ HẠNG THEO TỔNG ĐIỂM DỰA TRÊN DỮ LIỆU THỰC TẾ
+      ['10', '11', '12'].forEach(kh => {
+        const khoiClasses = scores.filter(c => c.khoi === kh);
+        khoiClasses.sort((a, b) => b.totalScore - a.totalScore);
+        khoiClasses.forEach((c, idx) => {
+          if (idx > 0 && c.totalScore === khoiClasses[idx - 1].totalScore) {
+            c.rankInKhoi = khoiClasses[idx - 1].rankInKhoi;
+          } else {
+            c.rankInKhoi = idx + 1;
+          }
+        });
+      });
 
+     // return scores; // Trả về kết quả SAU KHI ĐÃ TÍNH LẠI XẾP HẠNG
       return scores;
     }
 
