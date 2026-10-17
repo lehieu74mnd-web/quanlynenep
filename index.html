@@ -415,15 +415,7 @@
             <td class="py-2.5 px-2 font-bold ${item.rewardPlus > 0 ? 'text-emerald-600' : 'text-slate-400'}">${item.rewardPlus > 0 ?  + item.rewardPlus : '-'}</td>
             <td class="py-2.5 px-3 font-extrabold text-blue-950 bg-blue-50/40">${item.totalScore}</td>
             <td class="py-2.5 px-3 font-extrabold text-emerald-700">${ Number(item.avgScore).toFixed(2)}</td>
-           ['10', '11', '12'].forEach(kh => {
-        const khoiClasses = scores.filter(c => c.khoi === kh);
-        khoiClasses.sort((a, b) => b.totalScore - a.totalScore);
-        khoiClasses.forEach((c, idx) => {
-      if (idx > 0 && c.totalScore === khoiClasses[idx - 1].totalScore) {
-        c.rankInKhoi = khoiClasses[idx - 1].rankInKhoi;
-      } else {
-        c.rankInKhoi = idx + 1;
-      }
+           
     });
   });
         `;
