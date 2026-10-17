@@ -412,14 +412,20 @@
             <td class="py-2.5 px-2 font-bold ${item.sdbMinus > 0 ? 'text-rose-600' : 'text-slate-400'}">${item.sdbMinus > 0 ? '-' + item.sdbMinus : '-'}</td>
             <td class="py-2.5 px-2 font-bold ${item.vangMinus > 0 ? 'text-amber-600' : 'text-slate-400'}">${item.vangMinus > 0 ? '-' + item.vangMinus : '-'}</td>
             <td class="py-2.5 px-2 font-bold ${item.coDoMinus > 0 ? 'text-red-500' : 'text-slate-400'}">${item.coDoMinus > 0 ? '-' + item.coDoMinus : '-'}</td>
-           // <td class="py-2.5 px-2 font-bold ${item.rewardPlus > 0 ? 'text-emerald-600' : 'text-slate-400'}">${item.rewardPlus > 0 ?  + item.rewardPlus : '-'}</td>
+            <td class="py-2.5 px-2 font-bold ${item.rewardPlus > 0 ? 'text-emerald-600' : 'text-slate-400'}">${item.rewardPlus > 0 ?  + item.rewardPlus : '-'}</td>
             <td class="py-2.5 px-3 font-extrabold text-blue-950 bg-blue-50/40">${item.totalScore}</td>
-          //  <td class="py-2.5 px-3 font-extrabold text-emerald-700">${ Number(item.avgScore).toFixed(2)}</td>
-            <!-- 👇 THÊM CỘT XẾP HẠNG KHỐI VÀO ĐÂY (Dùng parseInt để chắc chắn không bị .00) -->
-            <td class="py-2.5 px-3 font-bold text-blue-900">
-              <span class="px-2.5 py-1 rounded-full text-xs font-bold ${badgeClass}">
-                ${parseInt(item.rankInKhoi, 10)} </span>
-            </td>
+            <td class="py-2.5 px-3 font-extrabold text-emerald-700">${ Number(item.avgScore).toFixed(2)}</td>
+           ['10', '11', '12'].forEach(kh => {
+        const khoiClasses = scores.filter(c => c.khoi === kh);
+        khoiClasses.sort((a, b) => b.totalScore - a.totalScore);
+        khoiClasses.forEach((c, idx) => {
+      if (idx > 0 && c.totalScore === khoiClasses[idx - 1].totalScore) {
+        c.rankInKhoi = khoiClasses[idx - 1].rankInKhoi;
+      } else {
+        c.rankInKhoi = idx + 1;
+      }
+    });
+  });
         `;
       }).join('');
     }
