@@ -392,7 +392,7 @@
 
       const tbody = document.getElementById('ranking-tbody');
       if (displayClasses.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-slate-400 italic">Chưa có dữ liệu thi đua trong tuần này.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 italic">Chưa có dữ liệu thi đua trong tuần này.</td></tr>`;
         return;
       }
 
@@ -411,8 +411,6 @@
             <td class="py-2.5 px-2 font-bold ${item.rewardPlus > 0 ? 'text-emerald-600' : 'text-slate-400'}">${item.rewardPlus > 0 ? '+' + item.rewardPlus : '-'}</td>
             <td class="py-2.5 px-3 font-extrabold text-blue-950 bg-blue-50/40">${item.totalScore}</td>
             <td class="py-2.5 px-3 font-extrabold text-emerald-700">${Number(item.avgScore).toFixed(2)}</td>
-            <td class="py-2.5 px-3"><span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${badgeClass}">Hạng ${item.rankInKhoi}</span></td>
-          </tr>
         `;
       }).join('');
     }
