@@ -349,11 +349,11 @@
         // Lấy giá trị chính xác lớn nhất giữa dữ liệu Google Sheet và Nhật ký vi phạm
         //let coDo = Math.max(Math.abs(Number(sheetData.coDoMinus) || 0), calcCoDo);
         let coDo = calcCoDo;
-        //let sdb = Math.max(Math.abs(Number(sheetData.sdbMinus) || 0), calcSdb);
-        //let vang = Math.max(Math.abs(Number(sheetData.vangMinus) || 0), calcVang);
+        let sdb = Math.max(Math.abs(Number(sheetData.sdbMinus) || 0), calcSdb);
+        let vang = Math.max(Math.abs(Number(sheetData.vangMinus) || 0), calcVang);
         //let coDo = calcCoDo;
-        let sdb = calcSdb;
-        let vang = calcVang;
+        //let sdb = calcSdb;
+        //let vang = calcVang;
         let reward = Math.abs(Number(sheetData.rewardPlus) || 0);
 
         let total = Number(sheetData.totalScore) || (BASE_POINTS - coDo - sdb - vang + reward);
