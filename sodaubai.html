@@ -217,8 +217,32 @@
 
   <!-- ================= JAVASCRIPT LOGIC ================= -->
   <script>
-    // Master data array stored in memory
-    let savedRecords = [];
+    // LocalStorage key constant
+    const STORAGE_KEY = 'SO_DAU_BAI_THI_DUA_DATA';
+
+    // Master data array initialized from localStorage if available
+    let savedRecords = loadSavedRecords();
+
+    // Helper: Load data from localStorage
+    function loadSavedRecords() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        return stored ? JSON.parse(stored) : [];
+      } catch (e) {
+        console.error('Không thể đọc dữ liệu từ localStorage:', e);
+        return [];
+      }
+    }
+
+    // Helper: Save current data to localStorage
+    function persistRecords() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(savedRecords));
+      } catch (e) {
+        console.error('Không thể ghi dữ liệu vào localStorage:', e);
+        showToast('Lỗi lưu vào bộ nhớ trình duyệt!', 'error');
+      }
+    }
 
     // Helper: Format YYYY-MM-DD to DD/MM/YYYY
     function formatDateVN(dateStr) {
@@ -379,8 +403,11 @@
         return;
       }
 
+      // Save to localStorage
+      persistRecords();
+
       renderSavedTable();
-      showToast(`Đã lưu ${addedCount} mục cho lớp ${lop}!`);
+      showToast(`Đã lưu ${addedCount} mục cho lớp ${lop}! Dữ liệu được bảo toàn.`);
       
       // Reset rows after saving successfully
       resetInputTable();
@@ -432,6 +459,7 @@
     // Delete single record
     function deleteSingleRecord(id) {
       savedRecords = savedRecords.filter(r => r.id !== id);
+      persistRecords();
       renderSavedTable();
       showToast('Đã xóa 1 dòng dữ liệu');
     }
@@ -444,11 +472,12 @@
       }
       openModal(
         'Xác nhận xóa tất cả',
-        `Bạn có chắc chắn muốn xóa toàn bộ ${savedRecords.length} dòng dữ liệu đã lưu?`,
+        `Bạn có chắc chắn muốn xóa vĩnh viễn toàn bộ ${savedRecords.length} dòng dữ liệu đã lưu? Thao tác này không thể hoàn tác.`,
         () => {
           savedRecords = [];
+          persistRecords();
           renderSavedTable();
-          showToast('Đã xóa toàn bộ dữ liệu!');
+          showToast('Đã xóa sạch bộ nhớ dữ liệu!');
           closeModal();
         }
       );
@@ -532,6 +561,7 @@
       // Create initial input rows
       addRow();
       addRow();
+      // Render saved data restored from localStorage
       renderSavedTable();
     };
   </script>
