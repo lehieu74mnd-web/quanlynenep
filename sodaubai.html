@@ -116,7 +116,7 @@
                   <input type="text" placeholder="Tự nhập môn..." class="row-mon w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs">
                 </td>
                 <td class="p-2">
-                  <input type="text" placeholder="Gõ nội dung vi phạm..." class="row-noidung w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs">
+                  <input type="text" placeholder="Gõ nội dung vi phạm (có thể để trống)..." class="row-noidung w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs">
                 </td>
                 <td class="p-2">
                   <input type="number" step="0.5" value="1" placeholder="Điểm" class="row-diem w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs text-center font-bold text-red-600">
@@ -192,7 +192,6 @@
 
     // Khởi chạy khi tải trang
     function initApp() {
-      // Set ngày mặc định cho hàng đầu tiên là hôm nay
       const today = new Date().toISOString().split('T')[0];
       const firstDateInput = document.querySelector('.row-date');
       if(firstDateInput) {
@@ -200,7 +199,6 @@
         updateThu(firstDateInput);
       }
 
-      // Tải dữ liệu từ localStorage
       const stored = localStorage.getItem('sodaubai_data');
       if (stored) {
         try {
@@ -229,7 +227,7 @@
           <input type="text" placeholder="Tự nhập môn..." class="row-mon w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs">
         </td>
         <td class="p-2">
-          <input type="text" placeholder="Gõ nội dung vi phạm..." class="row-noidung w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs">
+          <input type="text" placeholder="Gõ nội dung vi phạm (có thể để trống)..." class="row-noidung w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs">
         </td>
         <td class="p-2">
           <input type="number" step="0.5" value="1" placeholder="Điểm" class="row-diem w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs text-center font-bold text-red-600">
@@ -287,28 +285,22 @@
         const noidung = tr.querySelector('.row-noidung').value.trim();
         const diem = tr.querySelector('.row-diem').value || '0';
 
-        if (noidung) { 
-          savedData.push({
-            id: Date.now() + Math.random(),
-            tuan: tuan,
-            ngay: ngay,
-            thu: thu,
-            buoi: buoi,
-            lop: lop,
-            doituong: doituong,
-            nguon: 'SỔ ĐẦU BÀI',
-            mon: mon,
-            noidung: noidung,
-            diem: diem
-          });
-          countAdded++;
-        }
+        // Luôn lưu dòng dữ liệu này (cho phép nội dung vi phạm để trống)
+        savedData.push({
+          id: Date.now() + Math.random(),
+          tuan: tuan,
+          ngay: ngay,
+          thu: thu,
+          buoi: buoi,
+          lop: lop,
+          doituong: doituong,
+          nguon: 'SỔ ĐẦU BÀI',
+          mon: mon,
+          noidung: noidung,
+          diem: diem
+        });
+        countAdded++;
       });
-
-      if (countAdded === 0) {
-        alert('Vui lòng nhập nội dung vi phạm trước khi lưu!');
-        return;
-      }
 
       localStorage.setItem('sodaubai_data', JSON.stringify(savedData));
       renderSavedTable();
@@ -338,7 +330,7 @@
           <td class="p-3">${item.doituong}</td>
           <td class="p-3 text-gray-500">${item.nguon}</td>
           <td class="p-3 font-medium">${item.mon || '-'}</td>
-          <td class="p-3 text-gray-900">${item.noidung}</td>
+          <td class="p-3 text-gray-900">${item.noidung || '-'}</td>
           <td class="p-3 text-center font-bold text-red-600">${item.diem}</td>
           <td class="p-3 text-center">
             <button onclick="deleteItem(${item.id})" class="text-gray-400 hover:text-red-500 p-1.5 transition" title="Xóa dòng này">
@@ -386,7 +378,7 @@
             <input type="text" placeholder="Tự nhập môn..." class="row-mon w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs">
           </td>
           <td class="p-2">
-            <input type="text" placeholder="Gõ nội dung vi phạm..." class="row-noidung w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs">
+            <input type="text" placeholder="Gõ nội dung vi phạm (có thể để trống)..." class="row-noidung w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs">
           </td>
           <td class="p-2">
             <input type="number" step="0.5" value="1" placeholder="Điểm" class="row-diem w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs text-center font-bold text-red-600">
