@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nhập Nhanh Sổ Đầu Bài Theo Lớp</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Thư viện SheetJS để xuất file Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body { background-color: #FFFDF5; }
+  </style>
+</head>
+<body class="p-4 md:p-6 font-sans text-gray-800" onload="initApp()">
+
+  <div class="max-w-6xl mx-auto space-y-6">
+
+    <!-- Card Nhập Theo Lớp -->
+    <div class="bg-white rounded-2xl shadow-sm border border-amber-100 p-6">
+      
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-4 mb-5 border-b border-gray-100">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 font-bold">
+            <i class="fa-solid fa-bolt text-lg"></i>
+          </div>
+          <div>
+            <h1 class="text-xl font-bold text-gray-800">Nhập Nhanh Sổ Đầu Bài Theo Lớp</h1>
+            <p class="text-xs text-gray-500">Nhập dữ liệu nhiều ngày trong tuần cho 1 lớp và lưu cố định vào trình duyệt</p>
+          </div>
+        </div>
+        <span class="px-3 py-1 bg-amber-50 text-amber-700 text-xs font-semibold rounded-full border border-amber-200">
+          ⚡ Chế độ chuyên sâu
+        </span>
+      </div>
+
+      <!-- Thẻ Chọn Lớp & Tuần Cố Định -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-amber-50/60 rounded-xl border border-amber-100 mb-6">
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">Tuần <span class="text-red-500">*</span></label>
+          <input type="number" id="tuanSelect" value="8" min="1" max="40" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-400 focus:outline-none text-sm font-semibold">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">Chọn Lớp (30 lớp) <span class="text-red-500">*</span></label>
+          <select id="lopSelect" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-400 focus:outline-none text-sm font-bold text-amber-800">
+            <option value="">-- Chọn Lớp --</option>
+            <optgroup label="Khối 10 (A1 - A11)">
+              <option value="10A1">10A1</option><option value="10A2">10A2</option><option value="10A3">10A3</option>
+              <option value="10A4">10A4</option><option value="10A5">10A5</option><option value="10A6">10A6</option>
+              <option value="10A7">10A7</option><option value="10A8">10A8</option><option value="10A9">10A9</option>
+              <option value="10A10">10A10</option><option value="10A11">10A11</option>
+            </optgroup>
+            <optgroup label="Khối 11 (B1 - B7)">
+              <option value="11B1">11B1</option><option value="11B2">11B2</option><option value="11B3">11B3</option>
+              <option value="11B4">11B4</option><option value="11B5">11B5</option><option value="11B6">11B6</option>
+              <option value="11B7">11B7</option>
+            </optgroup>
+            <optgroup label="Khối 12 (C1 - C12)">
+              <option value="12C1">12C1</option><option value="12C2">12C2</option><option value="12C3">12C3</option>
+              <option value="12C4">12C4</option><option value="12C5">12C5</option><option value="12C6">12C6</option>
+              <option value="12C7">12C7</option><option value="12C8">12C8</option><option value="12C9">12C9</option>
+              <option value="12C10">12C10</option><option value="12C11">12C11</option><option value="12C12">12C12</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">Buổi</label>
+          <select id="buoiSelect" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-400 focus:outline-none text-sm">
+            <option value="Sáng">Sáng</option>
+            <option value="Chiều">Chiều</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">Nguồn ghi nhận</label>
+          <input type="text" value="SỔ ĐẦU BÀI" readonly class="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm text-gray-600 font-medium">
+        </div>
+      </div>
+
+      <!-- Danh sách các vi phạm trong tuần của Lớp -->
+      <div class="mb-4">
+        <div class="flex justify-between items-center mb-2">
+          <h2 class="text-sm font-bold text-gray-700">Chi tiết vi phạm theo ngày trong tuần:</h2>
+          <button onclick="addRow()" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-plus"></i> Thêm dòng vi phạm
+          </button>
+        </div>
+
+        <!-- Bảng danh sách dòng nhập -->
+        <div class="overflow-x-auto border border-gray-200 rounded-xl">
+          <table class="w-full text-left text-xs text-gray-700">
+            <thead class="bg-gray-50 border-b border-gray-200 uppercase font-semibold text-gray-600">
+              <tr>
+                <th class="p-3 w-36">Ngày / Thứ</th>
+                <th class="p-3 w-36">Đối tượng</th>
+                <th class="p-3 w-44">Môn học</th>
+                <th class="p-3">Nội dung vi phạm / Ghi chú</th>
+                <th class="p-3 w-12 text-center">Xóa</th>
+              </tr>
+            </thead>
+            <tbody id="entryTableBody" class="divide-y divide-gray-100">
+              <!-- Hàng mẫu 1 -->
+              <tr>
+                <td class="p-2">
+                  <input type="date" class="row-date w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs mb-1" onchange="updateThu(this)">
+                  <span class="row-thu text-[11px] font-bold text-amber-700 block">Thứ 2</span>
+                </td>
+                <td class="p-2">
+                  <input type="text" placeholder="Tập thể / Tên HS" value="Tập thể" class="row-doituong w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs">
+                </td>
+                <td class="p-2">
+                  <input type="text" placeholder="Tự nhập môn học..." class="row-mon w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs">
+                </td>
+                <td class="p-2">
+                  <input type="text" placeholder="Gõ nội dung vi phạm..." class="row-noidung w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs">
+                </td>
+                <td class="p-2 text-center">
+                  <button onclick="removeInputRow(this)" class="text-gray-400 hover:text-red-500 p-1">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <div class="flex gap-3 justify-end pt-2">
+        <button onclick="clearForm()" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold text-sm rounded-xl transition">
+          Làm mới
+        </button>
+        <button onclick="saveClassData()" class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm rounded-xl shadow-sm transition flex items-center gap-2">
+          <i class="fa-solid fa-floppy-disk"></i> Lưu Toàn Bộ Dữ Liệu Cho Lớp Này
+        </button>
+      </div>
+
+    </div>
+
+    <!-- BẢNG HIỂN THỊ DỮ LIỆU ĐÃ LƯU & XUẤT EXCEL -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+      <div class="flex flex-col md:flex-row justify-between items-center pb-4 mb-4 border-b border-gray-100 gap-3">
+        <div>
+          <h2 class="text-lg font-bold text-gray-800">Danh Sách Đã Lưu (<span id="totalCount">0</span>)</h2>
+          <p class="text-xs text-gray-500">Dữ liệu được lưu vĩnh viễn trên trình duyệt của bạn (chỉ mất khi bấm xóa)</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="exportToExcel()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl flex items-center gap-2 transition shadow-sm">
+            <i class="fa-solid fa-file-excel"></i> Xuất File Excel
+          </button>
+          <button onclick="clearAllData()" class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-xs rounded-xl flex items-center gap-2 transition border border-red-200">
+            <i class="fa-solid fa-trash-can"></i> Xóa hết dữ liệu
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto border border-gray-200 rounded-xl">
+        <table class="w-full text-left text-xs text-gray-700">
+          <thead class="bg-gray-50 border-b border-gray-200 uppercase font-semibold text-gray-600">
+            <tr>
+              <th class="p-3">Tuần</th>
+              <th class="p-3">Ngày</th>
+              <th class="p-3">Thứ</th>
+              <th class="p-3">Buổi</th>
+              <th class="p-3">Lớp</th>
+              <th class="p-3">Đối tượng</th>
+              <th class="p-3">Nguồn</th>
+              <th class="p-3">Môn học</th>
+              <th class="p-3">Nội dung vi phạm</th>
+              <th class="p-3 text-center">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="savedTableBody" class="divide-y divide-gray-100">
+            <!-- Dữ liệu lưu sẽ hiện ở đây -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let savedData = [];
+
+    // Khởi chạy khi tải trang
+    function initApp() {
+      // Set ngày mặc định cho hàng đầu tiên là hôm nay
+      const today = new Date().toISOString().split('T')[0];
+      const firstDateInput = document.querySelector('.row-date');
+      if(firstDateInput) {
+        firstDateInput.value = today;
+        updateThu(firstDateInput);
+      }
+
+      // Tải dữ liệu từ localStorage
+      const stored = localStorage.getItem('sodaubai_data');
+      if (stored) {
+        try {
+          savedData = JSON.parse(stored);
+        } catch(e) {
+          savedData = [];
+        }
+      }
+      renderSavedTable();
+    }
+
+    // Thêm dòng mới khi nhập
+    function addRow() {
+      const tbody = document.getElementById('entryTableBody');
+      const today = new Date().toISOString().split('T')[0];
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="p-2">
+          <input type="date" class="row-date w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs mb-1" value="${today}" onchange="updateThu(this)">
+          <span class="row-thu text-[11px] font-bold text-amber-700 block">Thứ 2</span>
+        </td>
+        <td class="p-2">
+          <input type="text" placeholder="Tập thể / Tên HS" value="Tập thể" class="row-doituong w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs">
+        </td>
+        <td class="p-2">
+          <input type="text" placeholder="Tự nhập môn học..." class="row-mon w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs">
+        </td>
+        <td class="p-2">
+          <input type="text" placeholder="Gõ nội dung vi phạm..." class="row-noidung w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs">
+        </td>
+        <td class="p-2 text-center">
+          <button onclick="removeInputRow(this)" class="text-gray-400 hover:text-red-500 p-1">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+      // Cập nhật thứ cho ngày mặc định vừa tạo
+      updateThu(tr.querySelector('.row-date'));
+    }
+
+    // Xóa dòng đang nhập
+    function removeInputRow(btn) {
+      const row = btn.closest('tr');
+      if (document.querySelectorAll('#entryTableBody tr').length > 1) {
+        row.remove();
+      } else {
+        alert('Cần giữ lại ít nhất 1 dòng nhập!');
+      }
+    }
+
+    // Tự động tính Thứ dựa trên ngày
+    function updateThu(input) {
+      if(!input.value) return;
+      const days = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+      const date = new Date(input.value);
+      const thuText = days[date.getDay()];
+      const label = input.nextElementSibling;
+      if(label) label.textContent = thuText;
+    }
+
+    // Lưu dữ liệu của lớp vào bộ nhớ trình duyệt (localStorage)
+    function saveClassData() {
+      const lop = document.getElementById('lopSelect').value;
+      const tuan = document.getElementById('tuanSelect').value;
+      const buoi = document.getElementById('buoiSelect').value;
+
+      if (!lop) {
+        alert('Vui lòng chọn Lớp trước khi lưu!');
+        document.getElementById('lopSelect').focus();
+        return;
+      }
+
+      const rows = document.querySelectorAll('#entryTableBody tr');
+      let countAdded = 0;
+
+      rows.forEach(tr => {
+        const ngay = tr.querySelector('.row-date').value;
+        const thu = tr.querySelector('.row-thu').textContent;
+        const doituong = tr.querySelector('.row-doituong').value.trim() || 'Tập thể';
+        const mon = tr.querySelector('.row-mon').value.trim();
+        const noidung = tr.querySelector('.row-noidung').value.trim();
+
+        if (noidung) { // Chỉ lưu nếu có nhập nội dung vi phạm
+          savedData.push({
+            id: Date.now() + Math.random(),
+            tuan: tuan,
+            ngay: ngay,
+            thu: thu,
+            buoi: buoi,
+            lop: lop,
+            doituong: doituong,
+            nguon: 'SỔ ĐẦU BÀI',
+            mon: mon,
+            noidung: noidung
+          });
+          countAdded++;
+        }
+      });
+
+      if (countAdded === 0) {
+        alert('Vui lòng nhập nội dung vi phạm trước khi lưu!');
+        return;
+      }
+
+      // Lưu vào localStorage
+      localStorage.setItem('sodaubai_data', JSON.stringify(savedData));
+      renderSavedTable();
+      alert(`Đã lưu thành công ${countAdded} mục của lớp ${lop} vào hệ thống!`);
+    }
+
+    // Hiển thị bảng danh sách đã lưu
+    function renderSavedTable() {
+      const tbody = document.getElementById('savedTableBody');
+      document.getElementById('totalCount').textContent = savedData.length;
+      
+      if (savedData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="p-4 text-center text-gray-400">Chưa có dữ liệu nào được lưu.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = '';
+      savedData.forEach((item, index) => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-gray-50 transition";
+        tr.innerHTML = `
+          <td class="p-3 font-semibold">Tuần ${item.tuan}</td>
+          <td class="p-3">${item.ngay}</td>
+          <td class="p-3 font-medium text-amber-700">${item.thu}</td>
+          <td class="p-3">${item.buoi}</td>
+          <td class="p-3 font-bold text-amber-800">${item.lop}</td>
+          <td class="p-3">${item.doituong}</td>
+          <td class="p-3 text-gray-500">${item.nguon}</td>
+          <td class="p-3 font-medium">${item.mon || '-'}</td>
+          <td class="p-3 text-gray-900">${item.noidung}</td>
+          <td class="p-3 text-center">
+            <button onclick="deleteItem(${item.id})" class="text-gray-400 hover:text-red-500 p-1.5 transition" title="Xóa dòng này">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Xóa 1 dòng đã lưu
+    function deleteItem(id) {
+      if (confirm('Bạn có chắc muốn xóa mục này không?')) {
+        savedData = savedData.filter(item => item.id !== id);
+        localStorage.setItem('sodaubai_data', JSON.stringify(savedData));
+        renderSavedTable();
+      }
+    }
+
+    // Xóa toàn bộ dữ liệu
+    function clearAllData() {
+      if (savedData.length === 0) return;
+      if (confirm('CẢNH BÁO: Thao tác này sẽ xóa toàn bộ dữ liệu đã lưu trên trình duyệt! Bạn có chắc chắn muốn xóa hết không?')) {
+        savedData = [];
+        localStorage.removeItem('sodaubai_data');
+        renderSavedTable();
+      }
+    }
+
+    // Làm mới form nhập
+    function clearForm() {
+      document.getElementById('lopSelect').value = '';
+      const tbody = document.getElementById('entryTableBody');
+      tbody.innerHTML = `
+        <tr>
+          <td class="p-2">
+            <input type="date" class="row-date w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs mb-1" value="${new Date().toISOString().split('T')[0]}" onchange="updateThu(this)">
+            <span class="row-thu text-[11px] font-bold text-amber-700 block">Thứ 2</span>
+          </td>
+          <td class="p-2">
+            <input type="text" placeholder="Tập thể / Tên HS" value="Tập thể" class="row-doituong w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs">
+          </td>
+          <td class="p-2">
+            <input type="text" placeholder="Tự nhập môn học..." class="row-mon w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs">
+          </td>
+          <td class="p-2">
+            <input type="text" placeholder="Gõ nội dung vi phạm..." class="row-noidung w-full p-1.5 border border-gray-200 rounded focus:ring-1 focus:ring-amber-400 text-xs">
+          </td>
+          <td class="p-2 text-center">
+            <button onclick="removeInputRow(this)" class="text-gray-400 hover:text-red-500 p-1">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+      updateThu(document.querySelector('.row-date'));
+    }
+
+    // Xuất ra file Excel
+    function exportToExcel() {
+      if (savedData.length === 0) {
+        alert('Chưa có dữ liệu để xuất Excel!');
+        return;
+      }
+
+      // Chuẩn hóa dữ liệu sang dạng bảng Excel
+      const excelData = savedData.map((item, index) => ({
+        "STT": index + 1,
+        "Tuần": item.tuan,
+        "Ngày": item.ngay,
+        "Thứ": item.thu,
+        "Buổi": item.buoi,
+        "Lớp": item.lop,
+        "Đối tượng": item.doituong,
+        "Nguồn ghi nhận": item.nguon,
+        "Môn học": item.mon,
+        "Nội dung vi phạm / Ghi chú": item.noidung
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "SoDauBai");
+
+      // Xuất file
+      XLSX.writeFile(workbook, "DanhSach_SoDauBai.xlsx");
+    }
+  </script>
+</body>
+</html>
