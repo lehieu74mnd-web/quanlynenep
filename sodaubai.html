@@ -182,7 +182,6 @@
   </div>
 
   <script>
-    // DÁN URL GOOGLE APPS SCRIPT ĐÃ TRIỂN KHẢI CỦA CÔ VÀO ĐÂY
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbydvmJrBGau_Z5tQKRnMGFHp7MZ6VRkeXuYryeuN0dCF81Ev9wTPb7Qu7YjdDrILsRurA/exec';
 
     let sheetData = [];
@@ -195,15 +194,14 @@
         updateThu(firstDateInput);
       }
       
-      // Tải dữ liệu Google Sheet về hiển thị
       fetchFromGoogleSheet();
     }
 
-    // Tải dữ liệu trực tiếp từ Google Sheet
+    // Tải dữ liệu từ Google Sheet về hiển thị
     async function fetchFromGoogleSheet() {
       const tbody = document.getElementById('savedTableBody');
-      if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes('https://script.google.com/macros/s/AKfycbydvmJrBGau_Z5tQKRnMGFHp7MZ6VRkeXuYryeuN0dCF81Ev9wTPb7Qu7YjdDrILsRurA/exec')) {
-        tbody.innerHTML = `<tr><td colspan="10" class="p-4 text-center text-red-500 font-medium">Vui lòng dán GOOGLE_SCRIPT_URL vào file HTML!</td></tr>`;
+      if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.trim() === '') {
+        tbody.innerHTML = `<tr><td colspan="10" class="p-4 text-center text-red-500 font-medium">Vui lòng kiểm tra lại URL Google Script!</td></tr>`;
         return;
       }
 
@@ -267,7 +265,7 @@
       if(label) label.textContent = thuText;
     }
 
-    // Lưu dữ liệu lên Google Sheet và load lại bảng
+    // Lưu dữ liệu lên Google Sheet và làm mới bảng
     async function saveClassData() {
       const lop = document.getElementById('lopSelect').value;
       const tuan = document.getElementById('tuanSelect').value;
@@ -318,7 +316,7 @@
 
         alert(`Đã lưu thành công ${batchList.length} mục của lớp ${lop} vào Google Sheet!`);
         
-        // Tải lại bảng sau 1.5 giây để Google Sheet cập nhật xong
+        // Tải lại bảng hiển thị dữ liệu sau khi Google Sheet ghi nhận
         setTimeout(fetchFromGoogleSheet, 1500);
 
       } catch (error) {
@@ -329,7 +327,7 @@
       }
     }
 
-    // Render bảng hiển thị dữ liệu từ Sheet
+    // Hiển thị danh sách dữ liệu từ Sheet
     function renderSavedTable() {
       const tbody = document.getElementById('savedTableBody');
       document.getElementById('totalCount').textContent = sheetData.length;
