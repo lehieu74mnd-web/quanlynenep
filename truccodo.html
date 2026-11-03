@@ -79,20 +79,24 @@
           </div>
         </div>
 
-        <button id="logoutBtn" class="text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border border-slate-700/80 transition flex items-center gap-1.5">
-          <i class="fa-solid fa-arrow-right-from-bracket"></i>
-          <span class="hidden sm:inline">Đăng xuất</span>
-        </button>
+        <div class="flex items-center gap-2">
+          <button id="refreshBtn" title="Tải lại dữ liệu hệ thống" class="text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 p-2 sm:px-3 sm:py-2 rounded-xl border border-slate-700/80 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-rotate"></i>
+            <span class="hidden sm:inline">Làm mới</span>
+          </button>
+          <button id="logoutBtn" class="text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border border-slate-700/80 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            <span class="hidden sm:inline">Đăng xuất</span>
+          </button>
+        </div>
       </div>
     </header>
 
     <!-- Main Content -->
     <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
       
-      <!-- FORM NHẬP LIỆU THEO DÒNG (BATCH MULTI-ROW) -->
+      <!-- FORM NHẬP LIỆU THEO DÒNG -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        
-        <!-- Header Form: Tuần & Ngày -->
         <div class="bg-slate-50/90 border-b border-slate-200 px-4 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div class="flex items-center gap-2">
             <i class="fa-solid fa-table-list text-red-600 text-base sm:text-lg"></i>
@@ -115,8 +119,6 @@
         </div>
 
         <form id="batchForm" class="p-3 sm:p-6 space-y-4">
-          
-          <!-- Bảng tiêu đề (Desktop >= 768px) -->
           <div class="hidden md:grid grid-cols-12 gap-3 px-3 py-2 bg-slate-100 rounded-xl text-[11px] font-bold text-slate-600 uppercase tracking-wider">
             <div class="col-span-2">LỚP</div>
             <div class="col-span-3">TÊN HS / NHÁP</div>
@@ -126,12 +128,10 @@
             <div class="col-span-1 text-center">XOÁ</div>
           </div>
 
-          <!-- Container chứa các dòng nhập liệu -->
           <div id="batchRowsContainer" class="space-y-3">
-            <!-- Render các dòng nhập bằng Javascript -->
+            <!-- Render các dòng nhập -->
           </div>
 
-          <!-- Thanh nút thao tác dưới đáy -->
           <div class="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
             <button type="button" id="addRowBtn" 
               class="w-full sm:w-auto bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-2 border border-slate-300">
@@ -139,28 +139,25 @@
               <span>Thêm dòng nhập mới</span>
             </button>
 
-            <button type="submit" 
+            <button type="submit" id="saveAllBtn"
               class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold px-6 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-md shadow-blue-600/30">
-              <i class="fa-solid fa-floppy-disk"></i>
-              <span>Lưu Tất Cả Bản Ghi</span>
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>Lưu Tất Cả Vào Hệ Thống</span>
             </button>
           </div>
 
         </form>
       </div>
 
-      <!-- BẢNG DANH SÁCH DỮ LIỆU ĐÃ LƯU -->
+      <!-- BẢNG DANH SÁCH DỮ LIỆU ĐÃ LƯU TỪ HỆ THỐNG -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        
-        <!-- Thanh công cụ & Bộ lọc -->
         <div class="p-4 border-b border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-slate-50/80">
           <div class="flex items-center justify-between sm:justify-start gap-2">
-            <h3 class="font-bold text-slate-900 text-sm sm:text-base">Danh Sách Vi Phạm</h3>
+            <h3 class="font-bold text-slate-900 text-sm sm:text-base">Danh Sách Vi Phạm Toàn Hệ Thống</h3>
             <span id="recordCount" class="bg-slate-200 text-slate-700 text-xs px-2.5 py-0.5 rounded-full font-bold">0 bản ghi</span>
           </div>
 
           <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <!-- Lọc theo khối -->
             <select id="filterLop" class="px-3 py-2 sm:py-1.5 border border-slate-300 rounded-xl text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-red-500">
               <option value="">Tất cả các khối</option>
               <option value="10">Khối 10</option>
@@ -168,14 +165,12 @@
               <option value="12">Khối 12</option>
             </select>
 
-            <!-- Tìm kiếm -->
             <div class="relative flex-1 sm:w-48 lg:w-56">
               <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
               <input type="text" id="searchInput" placeholder="Tìm kiếm lớp, học sinh..." 
                 class="w-full pl-9 pr-3 py-2 sm:py-1.5 border border-slate-300 rounded-xl text-xs bg-white focus:outline-none focus:ring-2 focus:ring-red-500">
             </div>
 
-            <!-- Nút Copy Sheets & CSV -->
             <div class="grid grid-cols-2 gap-2 mt-1 sm:mt-0">
               <button id="copySheetBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-2 sm:py-1.5 rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm">
                 <i class="fa-solid fa-copy"></i> Copy Sheets
@@ -188,7 +183,12 @@
           </div>
         </div>
 
-        <!-- Xem dạng BẢNG (Desktop >= 768px) -->
+        <!-- Loading indicator -->
+        <div id="loadingData" class="p-8 text-center hidden">
+          <i class="fa-solid fa-circle-notch fa-spin text-red-600 text-2xl mb-2"></i>
+          <p class="text-xs text-slate-500 font-medium">Đang tải dữ liệu từ Google Sheets...</p>
+        </div>
+
         <div class="hidden md:block overflow-x-auto">
           <table class="w-full text-left text-sm">
             <thead class="bg-slate-100 text-slate-600 font-bold text-[11px] uppercase tracking-wider border-b border-slate-200">
@@ -202,78 +202,73 @@
                 <th class="py-3 px-4">Học Sinh Vi Phạm</th>
                 <th class="py-3 px-4">Nguồn Ghi Nhận</th>
                 <th class="py-3 px-4">Nội Dung Vi Phạm</th>
-                <th class="py-3 px-4 w-16 text-center">Thao tác</th>
               </tr>
             </thead>
             <tbody id="dataTableBody" class="divide-y divide-slate-200">
-              <!-- Render tự động -->
             </tbody>
           </table>
         </div>
 
-        <!-- Xem dạng THẺ CARD (Mobile < 768px) -->
         <div id="dataMobileCards" class="md:hidden divide-y divide-slate-200 p-2 space-y-2">
-          <!-- Render tự động -->
         </div>
 
-        <!-- Trạng thái trống -->
         <div id="emptyState" class="p-8 sm:p-12 text-center">
           <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl">
             <i class="fa-regular fa-folder-open"></i>
           </div>
           <p class="text-slate-700 font-bold text-sm sm:text-base">Chưa có dữ liệu vi phạm nào</p>
-          <p class="text-xs text-slate-400 mt-1">Sử dụng bảng phía trên để nhập và lưu dữ liệu mới.</p>
         </div>
       </div>
 
     </main>
 
-    <!-- Footer -->
     <footer class="bg-white border-t border-slate-200 py-3 text-center text-xs text-slate-400 font-medium mt-auto">
       Hệ thống Quản lý & Nhập liệu Thi đua Trực Cờ Đỏ
     </footer>
   </div>
 
-  <!-- Toast Notification -->
   <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl text-xs sm:text-sm hidden flex items-center gap-2.5 z-50 transition-all border border-slate-700">
     <i class="fa-solid fa-circle-check text-emerald-400 text-base" id="toastIcon"></i>
     <span id="toastMessage" class="font-semibold">Đã lưu thông tin thành công!</span>
   </div>
 
-  <!-- JavaScript Code -->
   <script>
+    // DÁN URL GOOGLE APPS SCRIPT CỦA BẠN VÀO ĐÂY:
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxq-FPuFS4cCMpSCYBUkHVDnKf74kj8xdyqCYz70EdhkhyKdxEsK5p9R0ITNoPrepWl/exec";
+
     const AUTH_USER = "truccodo";
     const AUTH_PASS = "123456";
 
-    // Danh sách 30 lớp chuẩn
     const DS_LOP = [
       '10A1', '10A2', '10A3', '10A4', '10A5', '10A6', '10A7', '10A8', '10A9', '10A10', '10A11',
       '11B1', '11B2', '11B3', '11B4', '11B5', '11B6', '11B7',
       '12C1', '12C2', '12C3', '12C4', '12C5', '12C6', '12C7', '12C8', '12C9', '12C10', '12C11', '12C12'
     ];
 
-    // Chỉ rút gọn hiển thị đúng 3 vi phạm
     const DS_VI_PHAM = [
       'Đi trễ, vào tiết trễ (1 học sinh)',
       'Không đồng phục',
       'Không bảng tên, dép lê, logo (mỗi vi phạm)'
     ];
 
-    let records = JSON.parse(localStorage.getItem('trucCoDo_Records')) || [];
+    let records = [];
 
     const loginSection = document.getElementById('loginSection');
     const appSection = document.getElementById('appSection');
     const loginForm = document.getElementById('loginForm');
     const loginError = document.getElementById('loginError');
     const logoutBtn = document.getElementById('logoutBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
 
     const batchForm = document.getElementById('batchForm');
     const batchRowsContainer = document.getElementById('batchRowsContainer');
     const addRowBtn = document.getElementById('addRowBtn');
+    const saveAllBtn = document.getElementById('saveAllBtn');
 
     const dataTableBody = document.getElementById('dataTableBody');
     const dataMobileCards = document.getElementById('dataMobileCards');
     const emptyState = document.getElementById('emptyState');
+    const loadingData = document.getElementById('loadingData');
     const recordCount = document.getElementById('recordCount');
 
     const inputTuan = document.getElementById('inputTuan');
@@ -284,7 +279,6 @@
     const exportCsvBtn = document.getElementById('exportCsvBtn');
     const copySheetBtn = document.getElementById('copySheetBtn');
 
-    // Mặc định Ngày hôm nay & Tuần 8
     const today = new Date();
     inputNgay.value = today.toISOString().split('T')[0];
     inputTuan.value = 8;
@@ -298,10 +292,8 @@
       }
     });
 
-    // ĐĂNG NHẬP (TỰ ĐỘNG XOÁ TẤT CẢ KÍ TỰ TRẮNG ĐẦU/CUỐI/GIỮA)
     loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      // .replace(/\s+/g, '') xoá triệt để tất cả khoảng trắng (space, tab...)
       const u = document.getElementById('username').value.replace(/\s+/g, '').toLowerCase();
       const p = document.getElementById('password').value.replace(/\s+/g, '');
 
@@ -321,6 +313,8 @@
       showToast('Đã đăng xuất!');
     });
 
+    refreshBtn.addEventListener('click', fetchCloudRecords);
+
     function showLogin() {
       loginSection.classList.remove('hidden');
       appSection.classList.add('hidden');
@@ -335,10 +329,31 @@
         addBatchRow('12C10');
         addBatchRow('12C10');
       }
-      renderTable();
+      fetchCloudRecords();
     }
 
-    // TẠO DÒNG NHẬP LIỆU NHANH
+    // TẢI DỮ LIỆU TỪ GOOGLE SHEETS
+    function fetchCloudRecords() {
+      if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbxq-FPuFS4cCMpSCYBUkHVDnKf74kj8xdyqCYz70EdhkhyKdxEsK5p9R0ITNoPrepWl/exec")) {
+        renderTable();
+        return;
+      }
+
+      loadingData.classList.remove('hidden');
+      fetch(GOOGLE_SCRIPT_URL)
+        .then(res => res.json())
+        .then(data => {
+          records = data.reverse(); // Hiện bản ghi mới nhất lên đầu
+          loadingData.classList.add('hidden');
+          renderTable();
+        })
+        .catch(err => {
+          console.error("Lỗi tải dữ liệu Google Sheets:", err);
+          loadingData.classList.add('hidden');
+          renderTable();
+        });
+    }
+
     function addBatchRow(defaultLop = '12C10') {
       const rowId = Date.now() + Math.random().toString(36).substr(2, 4);
       
@@ -352,8 +367,6 @@
 
       const rowHtml = `
         <div id="row_${rowId}" class="batch-row bg-white sm:bg-slate-50/50 p-3.5 sm:p-2.5 rounded-2xl border border-slate-200/90 shadow-sm sm:shadow-none hover:border-blue-300 transition space-y-2 sm:space-y-0 sm:grid sm:grid-cols-12 sm:gap-3 sm:items-center">
-          
-          <!-- LỚP -->
           <div class="sm:col-span-2 flex items-center justify-between sm:block">
             <label class="sm:hidden text-[11px] font-bold text-slate-500 uppercase">Lớp:</label>
             <select class="row-lop w-32 sm:w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-xl text-sm font-extrabold text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
@@ -361,42 +374,35 @@
             </select>
           </div>
 
-          <!-- TÊN HS / NHÁP -->
           <div class="sm:col-span-3">
             <input type="text" placeholder="Nháp / Tên học sinh..." 
               class="row-hocsinh w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-xl text-sm font-medium text-slate-700 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
           </div>
 
-          <!-- BUỔI (Cố định Sáng) -->
           <div class="sm:col-span-2 flex items-center justify-between sm:block">
             <label class="sm:hidden text-[11px] font-bold text-slate-500 uppercase">Buổi:</label>
             <input type="text" value="Sáng" readonly 
               class="row-buoi w-24 sm:w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-xl text-sm font-bold text-amber-800 bg-amber-50 text-center outline-none cursor-not-allowed">
           </div>
 
-          <!-- NGUỒN GHI NHẬN (Cố định TRỰC CỜ ĐỎ) -->
           <div class="sm:col-span-2 flex items-center justify-between sm:block">
             <label class="sm:hidden text-[11px] font-bold text-slate-500 uppercase">Nguồn:</label>
             <input type="text" value="TRỰC CỜ ĐỎ" readonly 
               class="row-nguon w-36 sm:w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 text-center outline-none cursor-not-allowed">
           </div>
 
-          <!-- NỘI DUNG VI PHẠM -->
           <div class="sm:col-span-2">
             <select class="row-noidung w-full px-3 py-2 sm:py-1.5 border border-slate-300 rounded-xl text-sm font-medium text-slate-800 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
               ${viPhamOptionsHtml}
             </select>
           </div>
 
-          <!-- NÚT XOÁ DÒNG -->
           <div class="sm:col-span-1 text-right sm:text-center pt-1 sm:pt-0 border-t border-slate-100 sm:border-0 flex justify-end sm:justify-center">
             <button type="button" onclick="removeBatchRow('row_${rowId}')" 
               class="text-slate-400 hover:text-red-500 p-1.5 rounded-lg transition flex items-center gap-1 text-xs sm:text-base font-semibold">
               <i class="fa-regular fa-circle-xmark text-lg"></i>
-              <span class="sm:hidden text-xs text-red-500">Xoá dòng</span>
             </button>
           </div>
-
         </div>
       `;
 
@@ -427,7 +433,7 @@
       return `Thứ ${day + 1}`;
     }
 
-    // LƯU TẤT CẢ DÒNG BẢN GHI
+    // LƯU DỮ LIỆU ĐẨY LÊN GOOGLE SHEETS
     batchForm.addEventListener('submit', (e) => {
       e.preventDefault();
 
@@ -436,7 +442,7 @@
       const thuVal = getThuTuNgay(ngayVal);
 
       const rows = document.querySelectorAll('.batch-row');
-      let countAdded = 0;
+      let newBatchRecords = [];
 
       rows.forEach((row, idx) => {
         const lop = row.querySelector('.row-lop').value;
@@ -446,7 +452,7 @@
         const noiDung = row.querySelector('.row-noidung').value;
 
         if (lop && noiDung) {
-          records.unshift({
+          newBatchRecords.push({
             id: Date.now() + idx,
             tuan: tuanVal,
             ngay: ngayVal,
@@ -457,41 +463,53 @@
             nguon: nguon,
             noiDung: noiDung
           });
-          countAdded++;
         }
       });
 
-      saveRecords();
-      renderTable();
-      showToast(`Đã lưu thành công ${countAdded} bản ghi!`);
+      if (newBatchRecords.length === 0) return;
+
+      // Đổi trạng thái nút bấm
+      saveAllBtn.disabled = true;
+      saveAllBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Đang lưu hệ thống...`;
+
+      if (GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes("DAN_URL_WEB_APP")) {
+        fetch(GOOGLE_SCRIPT_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newBatchRecords)
+        })
+        .then(() => {
+          showToast(`Đã lưu thành công ${newBatchRecords.length} bản ghi vào hệ thống!`);
+          saveAllBtn.disabled = false;
+          saveAllBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> <span>Lưu Tất Cả Vào Hệ Thống</span>`;
+          setTimeout(fetchCloudRecords, 1000);
+        })
+        .catch(err => {
+          console.error("Lỗi khi đẩy dữ liệu:", err);
+          saveAllBtn.disabled = false;
+          saveAllBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> <span>Lưu Tất Cả Vào Hệ Thống</span>`;
+        });
+      } else {
+        // Nếu chưa cấu hình Google Apps Script thì lưu tạm vào local
+        records.unshift(...newBatchRecords);
+        renderTable();
+        showToast(`Lưu thành công (Lưu tạm bộ nhớ máy)`);
+        saveAllBtn.disabled = false;
+        saveAllBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> <span>Lưu Tất Cả Vào Hệ Thống</span>`;
+      }
     });
 
-    function saveRecords() {
-      localStorage.setItem('trucCoDo_Records', JSON.stringify(records));
-    }
-
-    function deleteRecord(id) {
-      if (confirm('Bạn có chắc chắn muốn xoá dòng ghi nhận này?')) {
-        records = records.filter(r => r.id !== id);
-        saveRecords();
-        renderTable();
-        showToast('Đã xoá bản ghi!');
-      }
-    }
-    window.deleteRecord = deleteRecord;
-
-    // RENDER BẢNG & THẺ MOBILE
     function renderTable() {
       const lopFilterValue = filterLop.value;
       const searchValue = searchInput.value.toLowerCase().trim();
 
       const filteredRecords = records.filter(r => {
-        const matchLop = lopFilterValue ? r.lop.startsWith(lopFilterValue) : true;
+        const matchLop = lopFilterValue ? String(r.lop).startsWith(lopFilterValue) : true;
         const matchSearch = searchValue === '' || 
-          r.lop.toLowerCase().includes(searchValue) ||
-          r.hocSinh.toLowerCase().includes(searchValue) ||
-          r.noiDung.toLowerCase().includes(searchValue) ||
-          r.nguon.toLowerCase().includes(searchValue);
+          String(r.lop).toLowerCase().includes(searchValue) ||
+          String(r.hocSinh).toLowerCase().includes(searchValue) ||
+          String(r.noiDung).toLowerCase().includes(searchValue);
         return matchLop && matchSearch;
       });
 
@@ -506,7 +524,6 @@
 
       emptyState.classList.add('hidden');
 
-      // 1. Render Table Desktop
       dataTableBody.innerHTML = filteredRecords.map((r, index) => `
         <tr class="hover:bg-slate-50/80 transition text-slate-700">
           <td class="py-3 px-4 text-center font-mono text-slate-400 text-xs">${index + 1}</td>
@@ -522,15 +539,9 @@
           <td class="py-3 px-4 font-medium text-slate-800">${r.hocSinh}</td>
           <td class="py-3 px-4"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs border border-slate-200 font-mono font-medium">${r.nguon}</span></td>
           <td class="py-3 px-4 font-medium text-slate-800">${r.noiDung}</td>
-          <td class="py-3 px-4 text-center">
-            <button onclick="deleteRecord(${r.id})" class="text-slate-400 hover:text-red-600 p-1.5 rounded-lg transition hover:bg-red-50" title="Xoá">
-              <i class="fa-regular fa-trash-can text-sm"></i>
-            </button>
-          </td>
         </tr>
       `).join('');
 
-      // 2. Render Cards Mobile
       dataMobileCards.innerHTML = filteredRecords.map((r, index) => `
         <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2">
           <div class="flex items-center justify-between border-b border-slate-100 pb-2">
@@ -538,16 +549,11 @@
               <span class="font-extrabold text-base text-red-600 bg-red-50 px-2.5 py-0.5 rounded-lg border border-red-100">${r.lop}</span>
               <span class="text-xs font-bold text-slate-500">Tuần ${r.tuan} • ${r.thu} (${r.ngay})</span>
             </div>
-            <button onclick="deleteRecord(${r.id})" class="text-slate-400 hover:text-red-600 p-1">
-              <i class="fa-regular fa-trash-can text-sm"></i>
-            </button>
           </div>
-
           <div class="text-xs text-slate-800 space-y-1">
             <p class="font-medium"><strong class="text-slate-500">Học sinh / Nháp:</strong> ${r.hocSinh}</p>
             <p class="font-medium"><strong class="text-slate-500">Nội dung:</strong> <span class="text-slate-900 font-semibold">${r.noiDung}</span></p>
           </div>
-
           <div class="flex items-center justify-between text-[11px] pt-1 text-slate-500">
             <span class="px-2 py-0.5 rounded font-semibold bg-amber-100 text-amber-800">${r.buoi}</span>
             <span class="font-mono bg-slate-100 px-2 py-0.5 rounded border border-slate-200">${r.nguon}</span>
@@ -559,7 +565,6 @@
     filterLop.addEventListener('change', renderTable);
     searchInput.addEventListener('input', renderTable);
 
-    // Xuất CSV
     exportCsvBtn.addEventListener('click', () => {
       if (records.length === 0) {
         alert('Chưa có dữ liệu để xuất file!');
@@ -581,7 +586,6 @@
       document.body.removeChild(link);
     });
 
-    // Copy trực tiếp vào Google Sheets
     copySheetBtn.addEventListener('click', () => {
       if (records.length === 0) {
         alert('Chưa có dữ liệu để copy!');
