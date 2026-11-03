@@ -233,7 +233,7 @@
   </div>
 
   <script>
-    // DÁN URL GOOGLE APPS SCRIPT CỦA BẠN VÀO ĐÂY:
+    // URL GOOGLE APPS SCRIPT CỦA BẠN:
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxbj8W6rd-Okik3j5FNuIMDyLhX9QOMSHq1xEXkO0NUtnEwjg-s-MoefVVmgdN8S_2S4A/exec";
 
     const AUTH_USER = "truccodo";
@@ -334,7 +334,7 @@
 
     // TẢI DỮ LIỆU TỪ GOOGLE SHEETS
     function fetchCloudRecords() {
-      if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbxbj8W6rd-Okik3j5FNuIMDyLhX9QOMSHq1xEXkO0NUtnEwjg-s-MoefVVmgdN8S_2S4A/exec")) {
+      if (!GOOGLE_SCRIPT_URL) {
         renderTable();
         return;
       }
@@ -468,11 +468,10 @@
 
       if (newBatchRecords.length === 0) return;
 
-      // Đổi trạng thái nút bấm
       saveAllBtn.disabled = true;
       saveAllBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Đang lưu hệ thống...`;
 
-      if (GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbxbj8W6rd-Okik3j5FNuIMDyLhX9QOMSHq1xEXkO0NUtnEwjg-s-MoefVVmgdN8S_2S4A/exec")) {
+      if (GOOGLE_SCRIPT_URL) {
         fetch(GOOGLE_SCRIPT_URL, {
           method: "POST",
           mode: "no-cors",
@@ -483,7 +482,7 @@
           showToast(`Đã lưu thành công ${newBatchRecords.length} bản ghi vào hệ thống!`);
           saveAllBtn.disabled = false;
           saveAllBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> <span>Lưu Tất Cả Vào Hệ Thống</span>`;
-          setTimeout(fetchCloudRecords, 1000);
+          setTimeout(fetchCloudRecords, 1200);
         })
         .catch(err => {
           console.error("Lỗi khi đẩy dữ liệu:", err);
@@ -491,7 +490,6 @@
           saveAllBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i> <span>Lưu Tất Cả Vào Hệ Thống</span>`;
         });
       } else {
-        // Nếu chưa cấu hình Google Apps Script thì lưu tạm vào local
         records.unshift(...newBatchRecords);
         renderTable();
         showToast(`Lưu thành công (Lưu tạm bộ nhớ máy)`);
