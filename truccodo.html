@@ -472,7 +472,7 @@
       saveAllBtn.disabled = true;
       saveAllBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Đang lưu hệ thống...`;
 
-      if (GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes("DAN_URL_WEB_APP")) {
+      if (GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbxbj8W6rd-Okik3j5FNuIMDyLhX9QOMSHq1xEXkO0NUtnEwjg-s-MoefVVmgdN8S_2S4A/exec")) {
         fetch(GOOGLE_SCRIPT_URL, {
           method: "POST",
           mode: "no-cors",
