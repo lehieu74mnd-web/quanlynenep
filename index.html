@@ -342,32 +342,23 @@
 
         const classIncidents = incidents.filter(i => i.lop && i.lop.trim().toUpperCase() === cls.name.trim().toUpperCase() && Number(i.week) === currentWeek);
         
-        classIncidents.forEach(i => {
-          const src = (i.source || "").toUpperCase();
-          const pts = Math.abs(Number(i.points) || 0);
-          const catNote = ((i.category || "") + " " + (i.note || "")).toLowerCase();
+       let calcReward = 0;
+classIncidents.forEach(i => {
+  const src = (i.source || "").toUpperCase();
+  const raw = Number(i.points) || 0;
+  const pts = Math.abs(raw);
+  const catNote = ((i.category || "") + " " + (i.note || "")).toLowerCase();
 
-          if (catNote.includes("vắng")) {
-            calcVang += pts;
-          } else if (src.includes("SỔ ĐẦU BÀI") || src.includes("SĐB")) {
-            calcSdb += pts;
-          } else if (src.includes("CỜ ĐỎ") || src.includes("TRỰC CỜ ĐỎ")) {
-            calcCoDo += pts;
-          }
-        });
+  if (raw > 0) { calcReward += pts; return; }   // điểm cộng, không tính vào điểm trừ
 
-        // Lấy giá trị chính xác lớn nhất giữa dữ liệu Google Sheet và Nhật ký vi phạm
-        //let coDo = Math.max(Math.abs(Number(sheetData.coDoMinus) || 0), calcCoDo);
-        let coDo = calcCoDo;
-        let sdb = Math.max(Math.abs(Number(sheetData.sdbMinus) || 0), calcSdb);
-        let vang = Math.max(Math.abs(Number(sheetData.vangMinus) || 0), calcVang);
-        //let coDo = calcCoDo;
-       // let sdb = calcSdb;
-        //let vang = calcVang;
-        let reward = Math.abs(Number(sheetData.rewardPlus) || 0);
+  if (catNote.includes("vắng")) calcVang += pts;
+  else if (src.includes("SỔ ĐẦU BÀI") || src.includes("SĐB")) calcSdb += pts;
+  else if (src.includes("CỜ ĐỎ")) calcCoDo += pts;
+});
 
-        let total = Number(sheetData.totalScore) || (BASE_POINTS - coDo - sdb - vang + reward);
-        let avg = Number(sheetData.avgScore) || Number((total / 32).toFixed(2));
+let coDo = calcCoDo, sdb = calcSdb, vang = calcVang, reward = calcReward;
+let total = BASE_POINTS - coDo - sdb - vang + reward;
+let avg = Number((total / 32).toFixed(2));
 
         return {
           ...cls,
