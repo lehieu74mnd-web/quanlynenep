@@ -173,6 +173,7 @@
                 <th class="py-3 px-2 text-center">Trừ SĐB</th>
                 <th class="py-3 px-2 text-center">Trừ Vắng</th>
                 <th class="py-3 px-2 text-center">Trừ Cờ Đỏ</th>
+                <th class="py-3 px-2 text-center">Trừ Giám Thị</th>
                 <th class="py-3 px-2 text-center">Điểm cộng</th>
                 <th class="py-3 px-3 text-center font-bold bg-blue-900 text-amber-300">Tổng điểm</th>
                 <th class="py-3 px-3 text-center font-bold text-emerald-700">Xếp hạng theo khối</th>
@@ -266,7 +267,7 @@
     function formatDateVN(dateVal) {
       if (!dateVal) return '-';
       const str = dateVal.toString().trim();
-      if (/^\d{1,2}\/\d{1,2}\/\d{4}\$/.test(str)) return str;
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(str)) return str;
       const d = new Date(str);
       if (isNaN(d.getTime())) return str;
       const day = String(d.getDate()).padStart(2, '0');
@@ -339,6 +340,7 @@
         let calcSdb = 0;
         let calcCoDo = 0;
         let calcVang = 0;
+        let calcGT = 0;
 
         const classIncidents = incidents.filter(i => i.lop && i.lop.trim().toUpperCase() === cls.name.trim().toUpperCase() && Number(i.week) === currentWeek);
         
@@ -354,10 +356,11 @@ classIncidents.forEach(i => {
   if (catNote.includes("vắng")) calcVang += pts;
   else if (src.includes("SỔ ĐẦU BÀI") || src.includes("SĐB")) calcSdb += pts;
   else if (src.includes("CỜ ĐỎ")) calcCoDo += pts;
+  else calcGT += pts;   // GIÁM THỊ và mọi nguồn khác — trước đây bị bỏ sót
 });
 
-let coDo = calcCoDo, sdb = calcSdb, vang = calcVang, reward = calcReward;
-let total = BASE_POINTS - coDo - sdb - vang + reward;
+let coDo = calcCoDo, sdb = calcSdb, vang = calcVang, gt = calcGT, reward = calcReward;
+let total = BASE_POINTS - coDo - sdb - vang - gt + reward;
 let avg = Number((total / 32).toFixed(2));
 
         return {
@@ -365,6 +368,8 @@ let avg = Number((total / 32).toFixed(2));
           coDoMinus: coDo,
           sdbMinus: sdb,
           vangMinus: vang,
+          gtMinus: gt,
+          absentCount: classIncidents.filter(i => ((i.category || "") + " " + (i.note || "")).toLowerCase().includes("vắng")).length,
           rewardPlus: reward,
           totalScore: total,
           avgScore: avg,
@@ -405,7 +410,7 @@ let avg = Number((total / 32).toFixed(2));
       }
 
       let totalIncidentsCount = incidents.filter(i => Number(i.week) === currentWeek).length;
-      let totalVangMinusSum = scores.reduce((sum, c) => sum + (c.vangMinus > 0 ? 1 : 0), 0);
+      let totalVangMinusSum = scores.reduce((sum, c) => sum + c.absentCount, 0);
       let schoolAvgScore = scores.length > 0 ? (scores.reduce((sum, c) => sum + c.avgScore, 0) / scores.length).toFixed(2) : "10";
 
       document.getElementById('stat-total-incidents').innerText = totalIncidentsCount + " LƯỢT";
@@ -414,7 +419,7 @@ let avg = Number((total / 32).toFixed(2));
 
       const tbody = document.getElementById('ranking-tbody');
       if (displayClasses.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 italic">Chưa có dữ liệu thi đua trong tuần này.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-slate-400 italic">Chưa có dữ liệu thi đua trong tuần này.</td></tr>`;
         return;
       }
 
@@ -430,14 +435,16 @@ let avg = Number((total / 32).toFixed(2));
             <td class="py-2.5 px-2 font-bold ${item.sdbMinus > 0 ? 'text-rose-600' : 'text-slate-400'}">${item.sdbMinus > 0 ? '-' + item.sdbMinus : '-'}</td>
             <td class="py-2.5 px-2 font-bold ${item.vangMinus > 0 ? 'text-amber-600' : 'text-slate-400'}">${item.vangMinus > 0 ? '-' + item.vangMinus : '-'}</td>
             <td class="py-2.5 px-2 font-bold ${item.coDoMinus > 0 ? 'text-red-500' : 'text-slate-400'}">${item.coDoMinus > 0 ? '-' + item.coDoMinus : '-'}</td>
-            <td class="py-2.5 px-2 font-bold ${item.rewardPlus > 0 ? 'text-emerald-600' : 'text-slate-400'}">${item.rewardPlus > 0 ?  + item.rewardPlus : '-'}</td>
+            <td class="py-2.5 px-2 font-bold ${item.gtMinus > 0 ? 'text-red-500' : 'text-slate-400'}">${item.gtMinus > 0 ? '-' + item.gtMinus : '-'}</td>
+            <td class="py-2.5 px-2 font-bold ${item.rewardPlus > 0 ? 'text-emerald-600' : 'text-slate-400'}">${item.rewardPlus > 0 ? '+' + item.rewardPlus : '-'}</td>
             <td class="py-2.5 px-3 font-extrabold text-blue-950 bg-blue-50/40">${item.totalScore}</td>
             <!-- CỘT XẾP HẠNG THEO KHỐI (Đã loại bỏ số .00 và xóa cột thừa) -->
             <td class="py-2.5 px-3 font-bold text-blue-900">
               <span class="px-2.5 py-1 rounded-full text-xs font-bold ${badgeClass}">
                 ${parseInt(item.rankInKhoi, 10)}
               </span>
-        </tr>   
+            </td>
+          </tr>
         `;
       }).join('');
     }
@@ -464,7 +471,7 @@ let avg = Number((total / 32).toFixed(2));
         }
       });
 
-      let totalDeducted = clsData.sdbMinus + clsData.coDoMinus + clsData.vangMinus;
+      let totalDeducted = clsData.sdbMinus + clsData.coDoMinus + clsData.vangMinus + clsData.gtMinus;
 
       const cardsContainer = document.getElementById('class-summary-cards');
       if (cardsContainer) {
@@ -487,7 +494,7 @@ let avg = Number((total / 32).toFixed(2));
           <div class="p-3.5 bg-rose-50/70 border border-rose-200 rounded-xl">
             <p class="text-[10px] uppercase font-bold text-rose-800">Tổng Điểm Bị Trừ</p>
             <p class="text-xl font-black text-rose-700 mt-0.5">-${totalDeducted} đ</p>
-            <p class="text-[11px] text-rose-600 font-medium">SĐB: -${clsData.sdbMinus} | Cờ đỏ: -${clsData.coDoMinus} ${clsData.vangMinus > 0 ? '| Vắng: -' + clsData.vangMinus : ''}</p>
+            <p class="text-[11px] text-rose-600 font-medium">SĐB: -${clsData.sdbMinus} | Cờ đỏ: -${clsData.coDoMinus} | Giám thị: -${clsData.gtMinus} | Vắng: -${clsData.vangMinus}${clsData.rewardPlus > 0 ? ' | Cộng: +' + clsData.rewardPlus : ''}</p>
           </div>
         `;
       }
